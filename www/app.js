@@ -936,7 +936,7 @@
       how: "1 pau de canela + 2 cravinhos, ferver 5 min."
     },
     {
-      name: "Moringa",
+      name: "Moringa (se encontrar)",
       when: "Manh\xE3",
       good: "Folhas ricas em vitaminas e minerais. Sabor a erva.",
       how: "1 c. ch\xE1 de folha seca ou um punhado de folha fresca, 5 min. Junte lim\xE3o."
@@ -950,112 +950,183 @@
   ];
   var DETOX_NOTE = 'Sobre "detox": quem desintoxica o corpo s\xE3o o f\xEDgado e os rins. Estes ch\xE1s n\xE3o queimam gordura sozinhos. Ajudam porque hidratam, aliviam o incha\xE7o e substituem cerveja, refrigerantes e sumos a\xE7ucarados \u2014 e isso faz muita diferen\xE7a.';
   var RECIPES = [
+    // --- Pequeno-almoço ---
     {
       id: "papas",
-      name: "Papas de aveia com banana e ginguba",
+      name: "Papas de aveia com banana",
       meal: "Pequeno-almo\xE7o",
       time: "10 min",
       serves: 1,
       ing: [
         { q: "40 g", i: "Aveia", c: "mercearia" },
-        { q: "200 ml", i: "Leite (ou \xE1gua)", c: "lacticinios" },
+        { q: "200 ml", i: "Leite meio-gordo", c: "lacticinios" },
         { q: "1", i: "Banana", c: "frescos" },
-        { q: "1 c. sopa", i: "Ginguba torrada sem sal", c: "mercearia" },
+        { q: "1 c. sopa", i: "Amendoim torrado sem sal", c: "mercearia" },
         { q: "q.b.", i: "Canela", c: "mercearia" }
       ],
-      steps: ["Cozer a aveia no leite 4\u20135 min, mexendo.", "Servir com a banana \xE0s rodelas, a ginguba picada e canela."],
+      steps: ["Cozer a aveia no leite 4\u20135 min, mexendo.", "Servir com a banana \xE0s rodelas, o amendoim picado e canela."],
       tip: "Sem a\xE7\xFAcar: a banana j\xE1 ado\xE7a."
     },
     {
-      id: "omelete",
-      name: "Omelete de gimboa e tomate",
-      meal: "Pequeno-almo\xE7o / jantar",
+      id: "panquecas",
+      name: "Panquecas de aveia e banana",
+      meal: "Pequeno-almo\xE7o",
+      time: "15 min",
+      serves: 1,
+      ing: [
+        { q: "2", i: "Ovos", c: "lacticinios" },
+        { q: "1", i: "Banana", c: "frescos" },
+        { q: "40 g", i: "Aveia", c: "mercearia" },
+        { q: "q.b.", i: "Canela", c: "mercearia" },
+        { q: "1", i: "Iogurte natural", c: "lacticinios" }
+      ],
+      steps: ["Triturar ovos, banana, aveia e canela.", "Fazer 4\u20135 panquecas numa frigideira antiaderente, sem \xF3leo.", "Servir com o iogurte por cima."],
+      tip: "Sabe a doce e tem muita prote\xEDna."
+    },
+    {
+      id: "ovos-mexidos",
+      name: "Ovos mexidos com tomate e p\xE3o escuro",
+      meal: "Pequeno-almo\xE7o",
       time: "10 min",
       serves: 1,
       ing: [
         { q: "3", i: "Ovos", c: "lacticinios" },
-        { q: "1 m\xE3o", i: "Gimboa (ou espinafre)", c: "frescos" },
-        { q: "\xBD", i: "Cebola", c: "frescos" },
         { q: "1", i: "Tomate", c: "frescos" },
-        { q: "1 c. ch\xE1", i: "\xD3leo", c: "mercearia" }
+        { q: "\xBD", i: "Cebola", c: "frescos" },
+        { q: "1 fatia", i: "P\xE3o de forma integral", c: "mercearia" }
       ],
-      steps: ["Saltear a cebola e a gimboa picadas no \xF3leo 3 min.", "Juntar os ovos batidos com sal e o tomate em cubos.", "Cozinhar em lume brando e dobrar."],
-      tip: "Muita prote\xEDna e quase sem hidratos."
+      steps: ["Saltear a cebola e o tomate picados 3 min.", "Juntar os ovos batidos com sal e mexer em lume brando.", "Servir com a fatia de p\xE3o torrada."],
+      tip: "Uma fatia de p\xE3o, n\xE3o tr\xEAs."
+    },
+    // --- Almoços / jantares ---
+    {
+      id: "frango-forno",
+      name: "Frango no forno com batata-doce e legumes",
+      meal: "Almo\xE7o / jantar",
+      time: "45 min",
+      serves: 2,
+      ing: [
+        { q: "4", i: "Coxas de frango sem pele", c: "proteina" },
+        { q: "2 m\xE9dias", i: "Batata-doce", c: "frescos" },
+        { q: "2", i: "Cenoura", c: "frescos" },
+        { q: "1", i: "Pimento", c: "frescos" },
+        { q: "1", i: "Cebola", c: "frescos" },
+        { q: "3 dentes", i: "Alho", c: "frescos" },
+        { q: "1", i: "Lim\xE3o", c: "frescos" },
+        { q: "1 c. sopa", i: "Azeite ou \xF3leo", c: "mercearia" },
+        { q: "q.b.", i: "Colorau e oreg\xE3os", c: "mercearia" }
+      ],
+      steps: ["Temperar o frango com alho, lim\xE3o, colorau, oreg\xE3os e sal.", "P\xF4r tudo num tabuleiro com os legumes e a batata-doce aos peda\xE7os.", "Regar com o azeite e levar ao forno a 200 \xB0C, 35\u201340 min."],
+      tip: "Fa\xE7a a dobrar e leve para o almo\xE7o do dia seguinte."
     },
     {
-      id: "cacusso",
-      name: "Cacusso grelhado com batata-doce e salada",
+      id: "peixe-grelhado",
+      name: "Peixe grelhado com arroz e salada",
       meal: "Almo\xE7o / jantar",
-      time: "35 min",
+      time: "30 min",
       serves: 1,
       ing: [
-        { q: "1 m\xE9dio", i: "Cacusso (til\xE1pia)", c: "proteina" },
-        { q: "1 m\xE9dia", i: "Batata-doce", c: "frescos" },
+        { q: "200 g", i: "Peixe (corvina, cacusso, pescada ou carapau)", c: "proteina" },
+        { q: "\xBD ch\xE1vena", i: "Arroz", c: "mercearia" },
         { q: "1", i: "Lim\xE3o", c: "frescos" },
         { q: "2 dentes", i: "Alho", c: "frescos" },
         { q: "\xBD p\xE9", i: "Alface", c: "frescos" },
         { q: "1", i: "Tomate", c: "frescos" },
         { q: "\xBD", i: "Pepino", c: "frescos" }
       ],
-      steps: ["Temperar o cacusso com alho, lim\xE3o e sal 15 min.", "Cozer ou assar a batata-doce com casca.", "Grelhar o peixe 5\u20136 min de cada lado.", "Servir com salada de alface, tomate e pepino."],
-      tip: "Metade do prato salada, \xBC peixe, \xBC batata-doce."
+      steps: ["Temperar o peixe com alho, lim\xE3o e sal 15 min.", "Cozer o arroz.", "Grelhar o peixe 4\u20136 min de cada lado.", "Servir com salada de alface, tomate e pepino."],
+      tip: "Metade do prato salada, \xBC peixe, \xBC arroz."
     },
     {
-      id: "carapau",
-      name: "Carapau no forno com legumes",
+      id: "bolonhesa",
+      name: "Esparguete \xE0 bolonhesa leve",
       meal: "Almo\xE7o / jantar",
-      time: "40 min",
+      time: "30 min",
+      serves: 3,
+      ing: [
+        { q: "400 g", i: "Carne picada de vaca (magra)", c: "proteina" },
+        { q: "200 g", i: "Esparguete", c: "mercearia" },
+        { q: "1 lata", i: "Tomate pelado", c: "mercearia" },
+        { q: "2", i: "Cenoura", c: "frescos" },
+        { q: "1", i: "Cebola", c: "frescos" },
+        { q: "2 dentes", i: "Alho", c: "frescos" },
+        { q: "1", i: "Pimento", c: "frescos" }
+      ],
+      steps: ["Refogar cebola e alho com pouco \xF3leo; juntar a carne e deixar alourar.", "Juntar cenoura ralada, pimento picado e o tomate; 15 min em lume brando.", "Cozer a massa e servir com bastante molho e pouca massa."],
+      tip: 'A cenoura e o pimento "esticam" o molho: mais volume, menos calorias.'
+    },
+    {
+      id: "frango-arroz",
+      name: "Arroz de frango com legumes",
+      meal: "Almo\xE7o",
+      time: "35 min",
+      serves: 3,
+      ing: [
+        { q: "400 g", i: "Peito de frango", c: "proteina" },
+        { q: "1 ch\xE1vena", i: "Arroz", c: "mercearia" },
+        { q: "1 saco", i: "Legumes congelados (ervilha, cenoura, feij\xE3o-verde)", c: "mercearia" },
+        { q: "1", i: "Cebola", c: "frescos" },
+        { q: "2 dentes", i: "Alho", c: "frescos" },
+        { q: "2", i: "Tomate", c: "frescos" }
+      ],
+      steps: ["Refogar cebola, alho e tomate.", "Juntar o frango aos cubos e alourar.", "Juntar o arroz, os legumes e 2,5 ch\xE1venas de \xE1gua; 15\u201318 min tapado."],
+      tip: "Legumes congelados: baratos, duram e est\xE3o em qualquer supermercado."
+    },
+    {
+      id: "hamburguer",
+      name: "Hamb\xFArguer caseiro de frango com salada",
+      meal: "Jantar",
+      time: "20 min",
       serves: 2,
       ing: [
-        { q: "4", i: "Carapau", c: "proteina" },
-        { q: "1", i: "Cebola", c: "frescos" },
-        { q: "1", i: "Pimento", c: "frescos" },
-        { q: "2", i: "Tomate", c: "frescos" },
-        { q: "2", i: "Cenoura", c: "frescos" },
-        { q: "3 dentes", i: "Alho", c: "frescos" },
-        { q: "1", i: "Lim\xE3o", c: "frescos" },
-        { q: "1 c. sopa", i: "\xD3leo", c: "mercearia" }
+        { q: "400 g", i: "Carne picada de frango (ou peito picado)", c: "proteina" },
+        { q: "1", i: "Ovos", c: "lacticinios" },
+        { q: "3 c. sopa", i: "Aveia", c: "mercearia" },
+        { q: "\xBD", i: "Cebola", c: "frescos" },
+        { q: "q.b.", i: "Salsa ou coentros", c: "frescos" },
+        { q: "\xBD p\xE9", i: "Alface", c: "frescos" },
+        { q: "1", i: "Tomate", c: "frescos" }
       ],
-      steps: ["Forrar o tabuleiro com cebola, pimento, tomate e cenoura \xE0s rodelas.", "P\xF4r o carapau por cima, temperado com alho, lim\xE3o e sal.", "Regar com o \xF3leo e levar ao forno a 200 \xB0C, 25\u201330 min."],
-      tip: "Peixe barato, rico em \xF3mega-3."
+      steps: ["Misturar a carne, o ovo, a aveia, a cebola picada, salsa e sal.", "Formar 4 hamb\xFArgueres e grelhar 5 min de cada lado.", "Servir com salada (sem p\xE3o, ou com 1 p\xE3o pequeno)."],
+      tip: "Congele os que sobrarem, crus, separados com papel vegetal."
     },
     {
-      id: "frango-feijao",
-      name: "Frango grelhado com feij\xE3o e couve",
-      meal: "Almo\xE7o",
-      time: "25 min",
+      id: "omelete",
+      name: "Omelete de espinafres e queijo",
+      meal: "Jantar r\xE1pido",
+      time: "10 min",
       serves: 1,
       ing: [
-        { q: "150 g", i: "Peito de frango", c: "proteina" },
-        { q: "\xBD ch\xE1vena", i: "Feij\xE3o cozido", c: "mercearia" },
-        { q: "3 folhas", i: "Couve", c: "frescos" },
-        { q: "2 dentes", i: "Alho", c: "frescos" },
-        { q: "1", i: "Lim\xE3o", c: "frescos" },
-        { q: "opcional", i: "Jindungo", c: "frescos" }
+        { q: "3", i: "Ovos", c: "lacticinios" },
+        { q: "1 m\xE3o", i: "Espinafres (ou gimboa)", c: "frescos" },
+        { q: "1 fatia", i: "Queijo flamengo", c: "lacticinios" },
+        { q: "\xBD", i: "Cebola", c: "frescos" },
+        { q: "1 c. ch\xE1", i: "Azeite ou \xF3leo", c: "mercearia" }
       ],
-      steps: ["Temperar o frango com alho, lim\xE3o, sal e jindungo.", "Grelhar 5\u20136 min de cada lado.", "Saltear a couve cortada fina 3 min e juntar o feij\xE3o para aquecer."],
-      tip: "O feij\xE3o d\xE1 fibra e saciedade \u2014 mas se inchar, comece com pouco."
+      steps: ["Saltear cebola e espinafres 2\u20133 min.", "Juntar os ovos batidos com sal e o queijo em tiras.", "Cozinhar em lume brando e dobrar."],
+      tip: "Pronta em 10 minutos depois do treino da noite."
     },
     {
-      id: "atum-frade",
-      name: "Salada de atum com feij\xE3o-frade",
+      id: "grao-atum",
+      name: "Salada de gr\xE3o com atum",
       meal: "Almo\xE7o r\xE1pido",
       time: "10 min",
       serves: 1,
       ing: [
         { q: "1 lata", i: "Atum ao natural", c: "proteina" },
-        { q: "1 ch\xE1vena", i: "Feij\xE3o-frade cozido", c: "mercearia" },
+        { q: "\xBD lata", i: "Gr\xE3o-de-bico cozido", c: "mercearia" },
         { q: "\xBD", i: "Cebola", c: "frescos" },
         { q: "1", i: "Tomate", c: "frescos" },
-        { q: "q.b.", i: "Coentros ou salsa", c: "frescos" },
+        { q: "1", i: "Ovos", c: "lacticinios" },
+        { q: "q.b.", i: "Salsa ou coentros", c: "frescos" },
         { q: "1", i: "Lim\xE3o", c: "frescos" }
       ],
-      steps: ["Misturar o atum escorrido, o feij\xE3o-frade, a cebola e o tomate picados.", "Temperar com lim\xE3o, sal e coentros."],
+      steps: ["Cozer o ovo 10 min.", "Misturar atum escorrido, gr\xE3o passado por \xE1gua, cebola e tomate picados.", "Temperar com lim\xE3o, sal e salsa; juntar o ovo \xE0s rodelas."],
       tip: "\xD3tima para levar para o trabalho."
     },
     {
       id: "sopa",
-      name: "Sopa de ab\xF3bora e cenoura",
+      name: "Sopa de legumes (sem natas)",
       meal: "Entrada / jantar leve",
       time: "30 min",
       serves: 4,
@@ -1065,9 +1136,9 @@
         { q: "1", i: "Cebola", c: "frescos" },
         { q: "2 dentes", i: "Alho", c: "frescos" },
         { q: "1 pequena", i: "Batata", c: "frescos" },
-        { q: "q.b.", i: "Couve", c: "frescos" }
+        { q: "3 folhas", i: "Couve", c: "frescos" }
       ],
-      steps: ["Cozer tudo (menos a couve) em 1,5 L de \xE1gua com sal, 20 min.", "Triturar e juntar couve cortada fina; ferver mais 5 min."],
+      steps: ["Cozer tudo (menos a couve) em 1,5 L de \xE1gua com sal, 20 min.", "Triturar e juntar a couve cortada fina; ferver mais 5 min."],
       tip: "Uma tigela antes do jantar ajuda a comer menos do resto."
     },
     {
@@ -1086,89 +1157,51 @@
         { q: "q.b.", i: "Jindungo", c: "frescos" },
         { q: "2 c. sopa", i: "\xD3leo de palma (dend\xE9m)", c: "mercearia" }
       ],
-      steps: ["Refogar a cebola, o alho e o tomate no \xF3leo de palma.", "Juntar o frango e cozinhar 20 min em lume m\xE9dio com um pouco de \xE1gua.", "Juntar a ab\xF3bora e o quiabo e cozinhar mais 20 min."],
+      steps: ["Refogar cebola, alho e tomate no \xF3leo de palma.", "Juntar o frango e cozinhar 20 min com um pouco de \xE1gua.", "Juntar a ab\xF3bora e o quiabo e cozinhar mais 20 min."],
       tip: "Menos dend\xE9m do que o habitual e frango sem pele. Com funge: uma concha pequena."
     },
+    // --- Lanches ---
     {
-      id: "kizaca",
-      name: "Kizaca com peixe grelhado",
-      meal: "Almo\xE7o / jantar",
-      time: "45 min",
-      serves: 2,
+      id: "iogurte",
+      name: "Iogurte com fruta e aveia",
+      meal: "Lanche",
+      time: "3 min",
+      serves: 1,
       ing: [
-        { q: "400 g", i: "Folha de mandioca pisada (kizaca)", c: "frescos" },
-        { q: "1", i: "Cebola", c: "frescos" },
-        { q: "2", i: "Tomate", c: "frescos" },
-        { q: "3 dentes", i: "Alho", c: "frescos" },
-        { q: "2 c. sopa", i: "Ginguba mo\xEDda", c: "mercearia" },
-        { q: "400 g", i: "Peixe (cacusso, carapau ou corvina)", c: "proteina" }
+        { q: "1", i: "Iogurte natural", c: "lacticinios" },
+        { q: "1 pe\xE7a", i: "Fruta da \xE9poca (papaia, manga, ma\xE7\xE3)", c: "frescos" },
+        { q: "2 c. sopa", i: "Aveia", c: "mercearia" }
       ],
-      steps: ["Cozer a kizaca 20\u201325 min.", "Refogar cebola, alho e tomate com pouco \xF3leo, juntar a kizaca e a ginguba mo\xEDda; 10 min.", "Servir com o peixe grelhado."],
-      tip: "Folhas verdes \xE0 vontade; a ginguba em pouca quantidade."
+      steps: ["Juntar tudo numa ta\xE7a."],
+      tip: 'Iogurte natural sem a\xE7\xFAcar \u2014 os "de aromas" t\xEAm muito a\xE7\xFAcar.'
     },
     {
       id: "batido",
-      name: "Batido de papaia e aveia",
-      meal: "Lanche / p\xF3s-treino",
+      name: "Batido de banana e leite",
+      meal: "P\xF3s-treino",
       time: "5 min",
       serves: 1,
       ing: [
-        { q: "1 fatia grande", i: "Papaia", c: "frescos" },
+        { q: "1", i: "Banana", c: "frescos" },
+        { q: "250 ml", i: "Leite meio-gordo", c: "lacticinios" },
         { q: "2 c. sopa", i: "Aveia", c: "mercearia" },
-        { q: "1", i: "Iogurte natural", c: "lacticinios" },
-        { q: "100 ml", i: "\xC1gua ou leite", c: "lacticinios" }
+        { q: "1 c. sopa", i: "Manteiga de amendoim", c: "mercearia" }
       ],
       steps: ["Triturar tudo com gelo."],
-      tip: "A papaia \xE9 \xF3tima para o tr\xE2nsito intestinal."
+      tip: "Bom depois da calistenia: prote\xEDna e hidratos para recuperar."
     },
     {
-      id: "ovos-abacate",
-      name: "Ovos cozidos com abacate e tomate",
-      meal: "Lanche",
+      id: "ovos-cozidos",
+      name: "Ovos cozidos + fruta",
+      meal: "Lanche antes de sair do trabalho",
       time: "12 min",
       serves: 1,
       ing: [
         { q: "2", i: "Ovos", c: "lacticinios" },
-        { q: "\xBD", i: "Abacate", c: "frescos" },
-        { q: "1", i: "Tomate", c: "frescos" },
-        { q: "\xBD", i: "Lim\xE3o", c: "frescos" }
+        { q: "1 pe\xE7a", i: "Ma\xE7\xE3 ou banana", c: "frescos" }
       ],
-      steps: ["Cozer os ovos 10 min.", "Servir com abacate e tomate \xE0s fatias, lim\xE3o e sal."],
-      tip: "Mata a fome at\xE9 ao jantar e evita o petisco com a cerveja."
-    },
-    {
-      id: "feijoada",
-      name: "Feijoada leve com legumes",
-      meal: "Almo\xE7o",
-      time: "35 min",
-      serves: 3,
-      ing: [
-        { q: "3 ch\xE1venas", i: "Feij\xE3o cozido", c: "mercearia" },
-        { q: "2", i: "Cenoura", c: "frescos" },
-        { q: "4 folhas", i: "Couve", c: "frescos" },
-        { q: "1", i: "Cebola", c: "frescos" },
-        { q: "2", i: "Tomate", c: "frescos" },
-        { q: "3 dentes", i: "Alho", c: "frescos" },
-        { q: "300 g", i: "Peito de frango", c: "proteina" }
-      ],
-      steps: ["Refogar cebola, alho e tomate com pouco \xF3leo.", "Juntar o frango aos cubos e a cenoura; 10 min.", "Juntar o feij\xE3o, um pouco de \xE1gua e a couve; 15 min."],
-      tip: "Sem chouri\xE7o nem toucinho \u2014 o sabor vem do refogado."
-    },
-    {
-      id: "frango-manga",
-      name: "Salada de frango com manga",
-      meal: "Jantar",
-      time: "20 min",
-      serves: 1,
-      ing: [
-        { q: "120 g", i: "Peito de frango", c: "proteina" },
-        { q: "\xBD", i: "Manga", c: "frescos" },
-        { q: "\xBD p\xE9", i: "Alface", c: "frescos" },
-        { q: "\xBD", i: "Cebola", c: "frescos" },
-        { q: "1", i: "Lim\xE3o", c: "frescos" }
-      ],
-      steps: ["Grelhar o frango e cortar em tiras.", "Misturar com alface, manga em cubos e cebola fina.", "Temperar com lim\xE3o, sal e um fio de \xF3leo."],
-      tip: "Jantar leve depois do treino da noite."
+      steps: ["Cozer os ovos 10 min (pode cozer 6 de uma vez para a semana).", "Comer com uma pe\xE7a de fruta."],
+      tip: "Chegar a casa com fome \xE9 meio caminho para a cerveja e o petisco."
     }
   ];
   var CAT_NAMES = {
@@ -1726,6 +1759,7 @@
     };
   }
   var state = load();
+  state.shop.sel = state.shop.sel.filter((id) => RECIPES.some((r) => r.id === id));
   function save(resched = false) {
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
@@ -2027,7 +2061,7 @@
     if (nutriTab === "chas") {
       body = `<p class="note">${DETOX_NOTE}</p>${TEAS.map((t) => `<section class="card tea"><b>${t.name}</b><div class="muted small">\u23F0 ${t.when}</div><p class="small">${t.good}</p><p class="muted small">\u{1FAD6} ${t.how}</p></section>`).join("")}`;
     } else if (nutriTab === "receitas") {
-      body = `<p class="muted small">Ingredientes f\xE1ceis de encontrar em Angola. Regra do prato: \xBD legumes, \xBC prote\xEDna, \xBC hidratos (funge, arroz, batata-doce, mandioca).</p>` + RECIPES.map((r) => {
+      body = `<p class="muted small">S\xF3 ingredientes comuns de supermercado. Regra do prato: \xBD legumes, \xBC prote\xEDna, \xBC hidratos (arroz, massa, batata, batata-doce, funge).</p>` + RECIPES.map((r) => {
         const sel = state.shop.sel.includes(r.id), oid = `rec-${r.id}`;
         return `<section class="card"><div class="plan-h" data-toggle="${oid}"><div><b>${r.name}</b><div class="muted small">${r.meal} \xB7 ${r.time} \xB7 ${r.serves} ${r.serves > 1 ? "pessoas" : "pessoa"}</div></div><div class="chev">${open[oid] ? "\u25B4" : "\u25BE"}</div></div>
         ${open[oid] ? `<h3>Ingredientes</h3><ul class="small">${r.ing.map((x) => `<li>${x.q} ${x.i}</li>`).join("")}</ul><h3>Prepara\xE7\xE3o</h3><ol class="small">${r.steps.map((x) => `<li>${x}</li>`).join("")}</ol><p class="note">\u{1F4A1} ${r.tip}</p>` : ""}

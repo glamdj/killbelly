@@ -27,6 +27,7 @@ function load() {
   };
 }
 let state = load();
+state.shop.sel = state.shop.sel.filter((id) => RECIPES.some((r) => r.id === id));
 function save(resched = false) {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
   if (resched) scheduleSoon();
@@ -298,7 +299,7 @@ function vNutri() {
   if (nutriTab === 'chas') {
     body = `<p class="note">${DETOX_NOTE}</p>${TEAS.map((t) => `<section class="card tea"><b>${t.name}</b><div class="muted small">⏰ ${t.when}</div><p class="small">${t.good}</p><p class="muted small">🫖 ${t.how}</p></section>`).join('')}`;
   } else if (nutriTab === 'receitas') {
-    body = `<p class="muted small">Ingredientes fáceis de encontrar em Angola. Regra do prato: ½ legumes, ¼ proteína, ¼ hidratos (funge, arroz, batata-doce, mandioca).</p>` +
+    body = `<p class="muted small">Só ingredientes comuns de supermercado. Regra do prato: ½ legumes, ¼ proteína, ¼ hidratos (arroz, massa, batata, batata-doce, funge).</p>` +
       RECIPES.map((r) => {
         const sel = state.shop.sel.includes(r.id), oid = `rec-${r.id}`;
         return `<section class="card"><div class="plan-h" data-toggle="${oid}"><div><b>${r.name}</b><div class="muted small">${r.meal} · ${r.time} · ${r.serves} ${r.serves > 1 ? 'pessoas' : 'pessoa'}</div></div><div class="chev">${open[oid] ? '▴' : '▾'}</div></div>
