@@ -1,6 +1,7 @@
 import { DEFAULT_WEEK_FERIAS, SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, ALC_TIPS } from './data.js';
 import { animFor, ANIMS, startAnimLoop } from './anims.js';
 import { run as coachRun, say, setVoice } from './coach.js';
+import { status as upd, appReady, checkUpdates, applyNow, openApk } from './updater.js';
 import { profile, isVacation, setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
 
 // ---------- Estado ----------
@@ -217,6 +218,8 @@ function sessionCard(k, slot, cfg, editable = true) {
 
 function banners() {
   let b = '';
+  if (upd.apkUrl) b += `<div class="upd">⬆️ Nova versão da app disponível${upd.latest && upd.latest.notes ? `: ${upd.latest.notes}` : ''}. <button class="link" data-act="apk">Descarregar e instalar</button></div>`;
+  else if (upd.pending) b += `<div class="upd">✨ Atualização pronta${upd.pending.notes ? `: ${upd.pending.notes}` : ''}. <button class="link" data-act="applyUpd">Aplicar agora</button></div>`;
   if (isNative() && !notifOk) b += `<div class="warn">As notificações estão desligadas. <button class="link" data-act="perm">Ativar</button></div>`;
   if (isNative() && exactStatus !== 'granted') b += `<div class="warn">Para os alarmes tocarem à hora certa, permita "Alarmes e lembretes". <button class="link" data-act="exact">Abrir definição</button></div>`;
   return b;
@@ -419,6 +422,10 @@ function vDef() {
   <section class="card"><h2>Cópia de segurança</h2><p class="muted small">Copie o texto e guarde-o (ex.: email para si próprio). Para restaurar, cole e toque em Importar.</p>
     <textarea id="backup" rows="4" placeholder="Cole aqui para importar"></textarea>
     <div class="row"><button class="btn sm ghost" data-act="export">Exportar</button><button class="btn sm ghost" data-act="import">Importar</button></div></section>
+  <section class="card"><h2>⬆️ Atualizações</h2>
+    <p class="small">Versão instalada: app <b>${upd.native}</b> · conteúdo <b>${upd.web || 'local'}</b>${upd.latest ? ` · mais recente: app ${upd.latest.native} · conteúdo ${upd.latest.web}` : ''}</p>
+    <p class="muted small">${upd.error ? `Não foi possível verificar (${upd.error}).` : upd.apkUrl ? 'Há uma APK nova — use o aviso no topo.' : upd.pending ? 'Atualização descarregada; aplica-se ao reabrir a app.' : upd.lastCheck ? 'Está atualizado.' : 'A app verifica sozinha sempre que é aberta.'}</p>
+    <button class="btn ghost sm" data-act="checkUpd">Verificar agora</button></section>
   <p class="muted small center">KillBelly · os dados ficam só no seu telemóvel.</p>`;
 }
 
@@ -580,6 +587,9 @@ app.addEventListener('click', async (e) => {
     case 'clearShop': state.shop = { sel: [], checked: {} }; save(); render(); break;
     case 'resetPlan': if (confirm('Repor o plano original?')) { if (planEdit === 'ferias') state.weekFerias = clone(DEFAULT_WEEK_FERIAS); else state.week = clone(DEFAULT_WEEK); save(true); render(); } break;
     case 'test': await testNotification(); break;
+    case 'apk': openApk(); break;
+    case 'applyUpd': await applyNow(); break;
+    case 'checkUpd': { const b0 = t; b0.textContent = 'A verificar…'; await checkUpdates({ manual: true }); render(); break; }
     case 'testVoz': say('Olá Luís. Série um de três. Vai!'); break;
     case 'perm': { const r = await setupNotifications(); notifOk = r.ok; save(true); render(); break; }
     case 'exact': await openExactAlarmSettings(); break;
@@ -621,6 +631,7 @@ app.addEventListener('change', (e) => {
 // Ações vindas das notificações (telemóvel ou relógio)
 onAction((a) => {
   const n = a.notification, extra = n.extra || {};
+  if (extra.kind === 'apk') { openApk(); return; }
   if (a.actionId === 'drink') addWater(state.settings.copoMl);
   else if (a.actionId === 'done' && extra.slot) {
     const k = dkey(), l = slotLog(k, extra.slot);
@@ -636,12 +647,14 @@ document.addEventListener('visibilitychange', async () => {
     const tz = new Date().getTimezoneOffset();
     // Renova os lembretes se mudou o fuso horário (ex.: chegada a Portugal) ou de 6 em 6 horas
     if (tz !== lastTz || Date.now() - lastSchedAt > 6 * 3600e3) { lastTz = tz; lastSchedAt = Date.now(); scheduleSoon(); }
+    if (Date.now() - upd.lastCheck > 3 * 3600e3) checkUpdates().then(render);
     render();
   }
 });
 
 (async function init() {
   setVoice(state.settings.voz !== false);
+  appReady();
   render();
   startAnimLoop();
   try {
@@ -650,5 +663,7 @@ document.addEventListener('visibilitychange', async () => {
     exactStatus = await exactAlarmStatus();
     lastSched = await rescheduleAll(state);
   } catch (e) { lastSched = { error: String(e) }; }
+  render();
+  await checkUpdates();
   render();
 })();

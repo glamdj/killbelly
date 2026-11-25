@@ -6,6 +6,14 @@
     "LocalNotifications": {
       "smallIcon": "ic_stat_killbelly",
       "iconColor": "#14855C"
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": false,
+      "statsUrl": "",
+      "updateUrl": "",
+      "channelUrl": "",
+      "appReadyTimeout": 15000,
+      "resetWhenUpdate": true
     }
   }
 }

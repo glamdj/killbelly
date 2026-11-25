@@ -25,6 +25,8 @@ jobs:
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Instalar dependências e sincronizar
+        env:
+          WEB_BUILD: ${{ github.run_number }}
         run: |
           npm ci
           npm run build
@@ -40,6 +42,23 @@ jobs:
         run: |
           mkdir -p out
           cp android/app/build/outputs/apk/release/app-release.apk out/KillBelly-${{ github.run_number }}.apk
+
+      - name: Publicar atualização (killbelly-updates)
+        if: env.HAS_TOKEN == 'true'
+        env:
+          HAS_TOKEN: ${{ secrets.UPDATES_TOKEN != '' }}
+          UPDATES_TOKEN: ${{ secrets.UPDATES_TOKEN }}
+          WEB_BUILD: ${{ github.run_number }}
+        run: |
+          export NATIVE=$(node --input-type=module -e "import('./src/version.js').then(m=>console.log(m.NATIVE))")
+          export NOTES="$(git log -1 --pretty=%s)"
+          mkdir -p pub && (cd www && zip -qr ../pub/www.zip .)
+          cp out/*.apk pub/KillBelly.apk
+          node -e "require('fs').writeFileSync('pub/latest.json', JSON.stringify({native:+process.env.NATIVE, minNative:+process.env.NATIVE, web:+process.env.WEB_BUILD, zip:'www.zip', apk:'KillBelly.apk', notes:process.env.NOTES, date:new Date().toISOString()}, null, 2))"
+          cat pub/latest.json
+          cd pub && git init -q -b main && git add . \
+            && git -c user.name="KillBelly CI" -c user.email="ci@killbelly" commit -qm "Versão ${WEB_BUILD}" \
+            && git push -qf "https://x-access-token:${UPDATES_TOKEN}@github.com/glamdj/killbelly-updates.git" main
 
       - uses: actions/upload-artifact@v4
         with:

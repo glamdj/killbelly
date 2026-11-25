@@ -1,9 +1,9 @@
 {
   "name": "killbelly",
   "version": "1.0.0",
-  "description": "KillBelly — treino, água, peso e nutrição",
+  "description": "KillBelly \u2014 treino, \u00e1gua, peso e nutri\u00e7\u00e3o",
   "scripts": {
-    "build": "esbuild src/app.js --bundle --format=iife --target=es2019 --outfile=www/app.js",
+    "build": "esbuild src/app.js --bundle --format=iife --target=es2019 --outfile=www/app.js --define:__WEB_BUILD__=${WEB_BUILD:-0}",
     "sync": "npm run build && cap sync android"
   },
   "author": "",
@@ -13,7 +13,8 @@
     "@capacitor-community/text-to-speech": "^8.0.2",
     "@capacitor/android": "^8.6.2",
     "@capacitor/core": "^8.6.2",
-    "@capacitor/local-notifications": "^8.3.1"
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capgo/capacitor-updater": "^8.54.2"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.6.2",
