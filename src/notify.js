@@ -3,7 +3,14 @@
 // depois de reiniciar o telemóvel). Sempre que a app abre, os 14 dias são recalculados.
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { SESSIONS } from './data.js';
+import { SESSIONS, SNACKS } from './data.js';
+
+// Snack do dia: muda todos os dias (manhã e tarde diferentes)
+export function snacksFor(date) {
+  const d0 = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 864e5;
+  const i = (d0 * 2) % SNACKS.length;
+  return [SNACKS[i], SNACKS[(i + 1) % SNACKS.length]];
+}
 
 export const isNative = () => Capacitor.isNativePlatform();
 
@@ -78,6 +85,7 @@ export function profile(state, date = new Date()) {
       ...s,
       pesoHora: s.vPeso, aguaInicio: s.vAguaInicio, aguaFim: s.vAguaFim, metaAgua: s.vMetaAgua,
       cervejaHora: s.vCerveja, cervejaSabado: s.vCerveja, chaManha: s.vChaManha, chaNoite: s.vChaNoite,
+      snackManha: '', snackTarde: s.vSnackTarde, snackPrep: '',
     },
   };
 }
@@ -135,6 +143,18 @@ export function buildNotifications(state, from = new Date()) {
     }
     if (s.notifCerveja && (vac || wd !== 0)) {
       push({ id: base + 20, title: '🍷 Antes de beber…', body: 'Primeiro 500 ml de água ou infusão. Depois decide.', channelId: 'cerveja', extra: { kind: 'cerveja' }, schedule: { at: at(day, wd === 6 ? s.cervejaSabado : s.cervejaHora) } });
+    }
+    if (s.notifSnack) {
+      const [sm, st] = snacksFor(day);
+      if (s.snackManha && wd !== 0) push({ id: base + 50, title: '🍎 Lanche da manhã', body: sm.name, channelId: 'chas', extra: { kind: 'snack' }, schedule: { at: at(day, s.snackManha) } });
+      if (s.snackTarde) push({ id: base + 51, title: '🍌 Lanche da tarde', body: st.name, channelId: 'chas', extra: { kind: 'snack' }, schedule: { at: at(day, s.snackTarde) } });
+      // À noite, preparar os snacks de amanhã (se amanhã for dia de trabalho e não for férias)
+      const tmr = new Date(day); tmr.setDate(day.getDate() + 1);
+      const pt = profile(state, tmr);
+      if (s.snackPrep && !pt.vac && tmr.getDay() !== 0) {
+        const [a1, a2] = snacksFor(tmr);
+        push({ id: base + 52, title: '🥡 Preparar os snacks de amanhã', body: `Manhã: ${a1.name}. Tarde: ${a2.name}. Preparar: ${a1.prep}${a2.prep !== a1.prep ? `; ${a2.prep}` : ''}.`, channelId: 'chas', extra: { kind: 'snack' }, schedule: { at: at(day, s.snackPrep) } });
+      }
     }
     if (s.notifChas) {
       push({ id: base + 30, title: '🍵 Chá', body: vac ? 'Chá verde, gengibre ou moringa — sem açúcar.' : 'Chá verde, gengibre ou moringa — sem açúcar.', channelId: 'chas', extra: { kind: 'cha' }, schedule: { at: at(day, s.chaManha) } });

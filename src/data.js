@@ -266,6 +266,17 @@ export const TEAS = [
   },
 ];
 
+// Snacks para levar (rodam dia a dia)
+export const SNACKS = [
+  { name: 'Fruta + uma mão pequena de amendoim', prep: 'separar ~20 g de amendoim num saquinho e escolher uma peça de fruta' },
+  { name: '2 ovos cozidos + 1 peça de fruta', prep: 'cozer ovos (10 min) — pode cozer 6 para a semana' },
+  { name: '1 pacotinho de crackers + 1 ovo cozido', prep: 'cozer um ovo e pôr um pacotinho de crackers na mochila (só um!)' },
+  { name: 'Atum ao natural + palitos de pepino e cenoura', prep: 'cortar os palitos para uma caixinha e levar uma lata pequena de atum' },
+  { name: 'Banana + 1 c. sopa de manteiga de amendoim', prep: 'pôr a manteiga de amendoim num frasquinho' },
+  { name: 'Papaia ou manga cortada + amendoim', prep: 'cortar a fruta para uma caixinha' },
+  { name: 'Tostas de centeio + queijo flamengo', prep: 'preparar 2–3 tostas com queijo numa caixinha' },
+];
+
 export const DETOX_NOTE =
   'Sobre "detox": quem desintoxica o corpo são o fígado e os rins. Estes chás não queimam gordura sozinhos. Ajudam porque hidratam, aliviam o inchaço e substituem cerveja, refrigerantes e sumos açucarados — e isso faz muita diferença.';
 

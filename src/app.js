@@ -2,7 +2,7 @@ import { DEFAULT_WEEK_FERIAS, SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOT
 import { animFor, ANIMS, startAnimLoop } from './anims.js';
 import { run as coachRun, say, setVoice } from './coach.js';
 import { status as upd, appReady, checkUpdates, applyNow, openApk } from './updater.js';
-import { profile, isVacation, setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
+import { profile, isVacation, snacksFor, setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
 
 // ---------- Estado ----------
 const KEY = 'killbelly.v1';
@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS = {
   notifPeso: true, pesoHora: '05:05', cinturaDia: 1,
   notifCerveja: true, cervejaHora: '17:30', cervejaSabado: '13:30', metaCerveja: 10,
   notifChas: true, chaManha: '10:00', chaNoite: '21:15',
-  metaPeso: '', voz: true, pausaDificil: 60, pausaLeve: 40, pausaCore: 25, pausaPar: 45, pausaTroca: 10,
+  metaPeso: '', voz: true, notifSnack: true, snackManha: '10:30', snackTarde: '16:00', snackPrep: '21:00', vSnackTarde: '16:30', pausaDificil: 60, pausaLeve: 40, pausaCore: 25, pausaPar: 45, pausaTroca: 10,
   feriasModo: 'auto', feriasInicio: '2026-12-17', feriasFim: '2027-01-08',
   vPeso: '10:15', vAguaInicio: '10:30', vAguaFim: '22:30', vMetaAgua: 2500, vCerveja: '19:30', vChaManha: '16:00', vChaNoite: '23:00',
 };
@@ -250,6 +250,11 @@ function vHoje() {
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
       <div class="row"><button class="btn sm ghost" data-water="-${s.copoMl}">−${s.copoMl}</button><button class="btn sm" data-water="${s.copoMl}">+ copo ${s.copoMl} ml</button><button class="btn sm" data-water="500">+ garrafa 500 ml</button></div>
       <p class="muted small">${w >= s.metaAgua ? '✅ Meta de hoje cumprida!' : `Faltam ${num((s.metaAgua - w) / 1000, 2)} L (≈ ${Math.ceil((s.metaAgua - w) / s.copoMl)} copos).`} Chá e infusões sem açúcar também contam.</p></section>
+    ${s.notifSnack ? (() => { const [sm, st] = snacksFor(now), tm = new Date(now); tm.setDate(now.getDate() + 1); const [t1, t2] = snacksFor(tm);
+      return `<section class="card"><h2>🍎 Snacks de hoje</h2>
+      ${s.snackManha ? `<div class="hist"><span>${s.snackManha} · manhã</span><span>${sm.name}</span></div>` : ''}
+      <div class="hist"><span>${s.snackTarde} · tarde</span><span>${st.name}</span></div>
+      ${s.snackPrep ? `<p class="muted small">Amanhã: ${t1.name} · ${t2.name}</p>` : ''}</section>`; })() : ''}
     <section class="card"><h2>Treino de hoje</h2>${sessionCard(k, 'am', cfg.am)}${sessionCard(k, 'pm', cfg.pm)}</section>
     <section class="card"><h2>⚖️ Peso de hoje</h2>
       <div class="row"><input id="inPeso" type="number" inputmode="decimal" step="0.1" placeholder="kg" value="${wt ?? ''}"><button class="btn sm" data-act="savePeso">Guardar</button></div>
@@ -397,6 +402,7 @@ function vDef() {
     ${tg('notifPeso', '⚖️ Peso diário + cintura semanal')}${tm('pesoHora', 'Hora da pesagem')}
     <label class="fld"><span>Dia da cintura</span><select data-set="cinturaDia">${DAY_NAMES.map((d, i) => `<option value="${i}" ${s.cinturaDia == i ? 'selected' : ''}>${d}</option>`).join('')}</select></label>
     ${tg('notifCerveja', '🍷 Lembrete antes de beber')}${tm('cervejaHora', 'Seg–Sex')}${tm('cervejaSabado', 'Sábado')}
+    ${tg('notifSnack', '🍎 Snacks')}${tm('snackManha', 'Lanche da manhã (Seg–Sáb)')}${tm('snackTarde', 'Lanche da tarde')}${tm('snackPrep', 'Preparar snacks (noite anterior)')}
     ${tg('notifChas', '🍵 Chás')}${tm('chaManha', 'Chá da manhã')}${tm('chaNoite', 'Infusão da noite')}
     <p class="muted small">${lastSched ? (lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? ' (pré-visualização web)' : ''}${lastSched.warning ? ' — sem permissão de alarme exato, podem atrasar' : ''}.`) : ''}</p>
     <button class="btn" data-act="test">Enviar notificação de teste (5 s)</button></section>
@@ -407,7 +413,7 @@ function vDef() {
     <label class="fld"><span>De</span><input type="date" data-set="feriasInicio" value="${s.feriasInicio}"></label>
     <label class="fld"><span>Até</span><input type="date" data-set="feriasFim" value="${s.feriasFim}"></label>
     ${tm('vPeso', 'Pesagem')}${tm('vAguaInicio', 'Água desde')}${tm('vAguaFim', 'Água até')}${nm('vMetaAgua', 'Meta de água (ml)', 250)}
-    ${tm('vCerveja', 'Lembrete antes de beber')}${tm('vChaManha', 'Chá da tarde')}${tm('vChaNoite', 'Infusão da noite')}
+${tm('vSnackTarde', 'Lanche da tarde')}    ${tm('vCerveja', 'Lembrete antes de beber')}${tm('vChaManha', 'Chá da tarde')}${tm('vChaNoite', 'Infusão da noite')}
     <p class="muted small">Estado: ${isVacation(state) ? '<b>ativo</b>' : 'inativo'}. O plano de treino de férias edita-se no separador Treino.</p></section>
   <section class="card"><h2>Metas</h2>${nm('metaAgua', 'Água por dia (ml)', 250)}${nm('copoMl', 'Tamanho do copo (ml)', 50)}${nm('metaCerveja', 'Bebidas alcoólicas por semana (máx.)')}${nm('metaPeso', 'Peso objetivo (kg)', 0.5)}
     <p class="muted small">Água: cerca de 35 ml por kg de peso. No Lubango (altitude, ar seco) e nos dias de treino, 3 L é um bom alvo.</p></section>

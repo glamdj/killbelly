@@ -1456,6 +1456,15 @@
       how: "1 L de \xE1gua fria, rodelas de pepino e lim\xE3o, folhas de hortel\xE3. Deixar no frigor\xEDfico de manh\xE3."
     }
   ];
+  var SNACKS = [
+    { name: "Fruta + uma m\xE3o pequena de amendoim", prep: "separar ~20 g de amendoim num saquinho e escolher uma pe\xE7a de fruta" },
+    { name: "2 ovos cozidos + 1 pe\xE7a de fruta", prep: "cozer ovos (10 min) \u2014 pode cozer 6 para a semana" },
+    { name: "1 pacotinho de crackers + 1 ovo cozido", prep: "cozer um ovo e p\xF4r um pacotinho de crackers na mochila (s\xF3 um!)" },
+    { name: "Atum ao natural + palitos de pepino e cenoura", prep: "cortar os palitos para uma caixinha e levar uma lata pequena de atum" },
+    { name: "Banana + 1 c. sopa de manteiga de amendoim", prep: "p\xF4r a manteiga de amendoim num frasquinho" },
+    { name: "Papaia ou manga cortada + amendoim", prep: "cortar a fruta para uma caixinha" },
+    { name: "Tostas de centeio + queijo flamengo", prep: "preparar 2\u20133 tostas com queijo numa caixinha" }
+  ];
   var DETOX_NOTE = 'Sobre "detox": quem desintoxica o corpo s\xE3o o f\xEDgado e os rins. Estes ch\xE1s n\xE3o queimam gordura sozinhos. Ajudam porque hidratam, aliviam o incha\xE7o e substituem cerveja, refrigerantes e sumos a\xE7ucarados \u2014 e isso faz muita diferen\xE7a.';
   var ing = (q, i, c) => ({ q, i, c });
   var RECIPES = [
@@ -2556,6 +2565,11 @@
 
   // src/notify.js
   init_dist();
+  function snacksFor(date) {
+    const d0 = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 864e5;
+    const i = d0 * 2 % SNACKS.length;
+    return [SNACKS[i], SNACKS[(i + 1) % SNACKS.length]];
+  }
   var isNative = () => Capacitor.isNativePlatform();
   var CHANNELS = [
     { id: "treino", name: "Treinos", description: "Lembretes de treino" },
@@ -2623,7 +2637,10 @@
         cervejaHora: s.vCerveja,
         cervejaSabado: s.vCerveja,
         chaManha: s.vChaManha,
-        chaNoite: s.vChaNoite
+        chaNoite: s.vChaNoite,
+        snackManha: "",
+        snackTarde: s.vSnackTarde,
+        snackPrep: ""
       }
     };
   }
@@ -2690,6 +2707,18 @@
       }
       if (s.notifCerveja && (vac || wd !== 0)) {
         push({ id: base + 20, title: "\u{1F377} Antes de beber\u2026", body: "Primeiro 500 ml de \xE1gua ou infus\xE3o. Depois decide.", channelId: "cerveja", extra: { kind: "cerveja" }, schedule: { at: at(day, wd === 6 ? s.cervejaSabado : s.cervejaHora) } });
+      }
+      if (s.notifSnack) {
+        const [sm, st] = snacksFor(day);
+        if (s.snackManha && wd !== 0) push({ id: base + 50, title: "\u{1F34E} Lanche da manh\xE3", body: sm.name, channelId: "chas", extra: { kind: "snack" }, schedule: { at: at(day, s.snackManha) } });
+        if (s.snackTarde) push({ id: base + 51, title: "\u{1F34C} Lanche da tarde", body: st.name, channelId: "chas", extra: { kind: "snack" }, schedule: { at: at(day, s.snackTarde) } });
+        const tmr = new Date(day);
+        tmr.setDate(day.getDate() + 1);
+        const pt = profile(state2, tmr);
+        if (s.snackPrep && !pt.vac && tmr.getDay() !== 0) {
+          const [a1, a2] = snacksFor(tmr);
+          push({ id: base + 52, title: "\u{1F961} Preparar os snacks de amanh\xE3", body: `Manh\xE3: ${a1.name}. Tarde: ${a2.name}. Preparar: ${a1.prep}${a2.prep !== a1.prep ? `; ${a2.prep}` : ""}.`, channelId: "chas", extra: { kind: "snack" }, schedule: { at: at(day, s.snackPrep) } });
+        }
       }
       if (s.notifChas) {
         push({ id: base + 30, title: "\u{1F375} Ch\xE1", body: vac ? "Ch\xE1 verde, gengibre ou moringa \u2014 sem a\xE7\xFAcar." : "Ch\xE1 verde, gengibre ou moringa \u2014 sem a\xE7\xFAcar.", channelId: "chas", extra: { kind: "cha" }, schedule: { at: at(day, s.chaManha) } });
@@ -2760,6 +2789,11 @@
     chaNoite: "21:15",
     metaPeso: "",
     voz: true,
+    notifSnack: true,
+    snackManha: "10:30",
+    snackTarde: "16:00",
+    snackPrep: "21:00",
+    vSnackTarde: "16:30",
     pausaDificil: 60,
     pausaLeve: 40,
     pausaCore: 25,
@@ -3050,6 +3084,15 @@
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
       <div class="row"><button class="btn sm ghost" data-water="-${s.copoMl}">\u2212${s.copoMl}</button><button class="btn sm" data-water="${s.copoMl}">+ copo ${s.copoMl} ml</button><button class="btn sm" data-water="500">+ garrafa 500 ml</button></div>
       <p class="muted small">${w >= s.metaAgua ? "\u2705 Meta de hoje cumprida!" : `Faltam ${num((s.metaAgua - w) / 1e3, 2)} L (\u2248 ${Math.ceil((s.metaAgua - w) / s.copoMl)} copos).`} Ch\xE1 e infus\xF5es sem a\xE7\xFAcar tamb\xE9m contam.</p></section>
+    ${s.notifSnack ? (() => {
+      const [sm, st2] = snacksFor(now), tm = new Date(now);
+      tm.setDate(now.getDate() + 1);
+      const [t1, t2] = snacksFor(tm);
+      return `<section class="card"><h2>\u{1F34E} Snacks de hoje</h2>
+      ${s.snackManha ? `<div class="hist"><span>${s.snackManha} \xB7 manh\xE3</span><span>${sm.name}</span></div>` : ""}
+      <div class="hist"><span>${s.snackTarde} \xB7 tarde</span><span>${st2.name}</span></div>
+      ${s.snackPrep ? `<p class="muted small">Amanh\xE3: ${t1.name} \xB7 ${t2.name}</p>` : ""}</section>`;
+    })() : ""}
     <section class="card"><h2>Treino de hoje</h2>${sessionCard(k, "am", cfg.am)}${sessionCard(k, "pm", cfg.pm)}</section>
     <section class="card"><h2>\u2696\uFE0F Peso de hoje</h2>
       <div class="row"><input id="inPeso" type="number" inputmode="decimal" step="0.1" placeholder="kg" value="${wt != null ? wt : ""}"><button class="btn sm" data-act="savePeso">Guardar</button></div>
@@ -3195,6 +3238,7 @@
     ${tg("notifPeso", "\u2696\uFE0F Peso di\xE1rio + cintura semanal")}${tm("pesoHora", "Hora da pesagem")}
     <label class="fld"><span>Dia da cintura</span><select data-set="cinturaDia">${DAY_NAMES.map((d, i) => `<option value="${i}" ${s.cinturaDia == i ? "selected" : ""}>${d}</option>`).join("")}</select></label>
     ${tg("notifCerveja", "\u{1F377} Lembrete antes de beber")}${tm("cervejaHora", "Seg\u2013Sex")}${tm("cervejaSabado", "S\xE1bado")}
+    ${tg("notifSnack", "\u{1F34E} Snacks")}${tm("snackManha", "Lanche da manh\xE3 (Seg\u2013S\xE1b)")}${tm("snackTarde", "Lanche da tarde")}${tm("snackPrep", "Preparar snacks (noite anterior)")}
     ${tg("notifChas", "\u{1F375} Ch\xE1s")}${tm("chaManha", "Ch\xE1 da manh\xE3")}${tm("chaNoite", "Infus\xE3o da noite")}
     <p class="muted small">${lastSched ? lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? " (pr\xE9-visualiza\xE7\xE3o web)" : ""}${lastSched.warning ? " \u2014 sem permiss\xE3o de alarme exato, podem atrasar" : ""}.` : ""}</p>
     <button class="btn" data-act="test">Enviar notifica\xE7\xE3o de teste (5 s)</button></section>
@@ -3205,7 +3249,7 @@
     <label class="fld"><span>De</span><input type="date" data-set="feriasInicio" value="${s.feriasInicio}"></label>
     <label class="fld"><span>At\xE9</span><input type="date" data-set="feriasFim" value="${s.feriasFim}"></label>
     ${tm("vPeso", "Pesagem")}${tm("vAguaInicio", "\xC1gua desde")}${tm("vAguaFim", "\xC1gua at\xE9")}${nm("vMetaAgua", "Meta de \xE1gua (ml)", 250)}
-    ${tm("vCerveja", "Lembrete antes de beber")}${tm("vChaManha", "Ch\xE1 da tarde")}${tm("vChaNoite", "Infus\xE3o da noite")}
+${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de beber")}${tm("vChaManha", "Ch\xE1 da tarde")}${tm("vChaNoite", "Infus\xE3o da noite")}
     <p class="muted small">Estado: ${isVacation(state) ? "<b>ativo</b>" : "inativo"}. O plano de treino de f\xE9rias edita-se no separador Treino.</p></section>
   <section class="card"><h2>Metas</h2>${nm("metaAgua", "\xC1gua por dia (ml)", 250)}${nm("copoMl", "Tamanho do copo (ml)", 50)}${nm("metaCerveja", "Bebidas alco\xF3licas por semana (m\xE1x.)")}${nm("metaPeso", "Peso objetivo (kg)", 0.5)}
     <p class="muted small">\xC1gua: cerca de 35 ml por kg de peso. No Lubango (altitude, ar seco) e nos dias de treino, 3 L \xE9 um bom alvo.</p></section>
