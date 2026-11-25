@@ -246,11 +246,11 @@ function vHoje() {
   return `<header><div><h1>${greet}, ${s.nome}</h1><div class="muted">${DAY_NAMES[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]}</div></div>
     <div class="streak" title="Dias seguidos com treino">🔥 ${st}</div></header>
     ${banners()}${pr.vac ? `<div class="vac">🏖️ Modo férias${s.feriasModo === 'auto' && s.feriasFim ? ` até ${fmtShort(s.feriasFim)}` : ''} — durma bem, o treino é ao fim da manhã.</div>` : ''}
-    <section class="card"><h2>Treino de hoje</h2>${sessionCard(k, 'am', cfg.am)}${sessionCard(k, 'pm', cfg.pm)}</section>
     <section class="card"><h2>💧 Água <span class="right">${num(w / 1000, 2)} / ${num(s.metaAgua / 1000, 1)} L</span></h2>
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
       <div class="row"><button class="btn sm ghost" data-water="-${s.copoMl}">−${s.copoMl}</button><button class="btn sm" data-water="${s.copoMl}">+ copo ${s.copoMl} ml</button><button class="btn sm" data-water="500">+ garrafa 500 ml</button></div>
       <p class="muted small">${w >= s.metaAgua ? '✅ Meta de hoje cumprida!' : `Faltam ${num((s.metaAgua - w) / 1000, 2)} L (≈ ${Math.ceil((s.metaAgua - w) / s.copoMl)} copos).`} Chá e infusões sem açúcar também contam.</p></section>
+    <section class="card"><h2>Treino de hoje</h2>${sessionCard(k, 'am', cfg.am)}${sessionCard(k, 'pm', cfg.pm)}</section>
     <section class="card"><h2>⚖️ Peso de hoje</h2>
       <div class="row"><input id="inPeso" type="number" inputmode="decimal" step="0.1" placeholder="kg" value="${wt ?? ''}"><button class="btn sm" data-act="savePeso">Guardar</button></div>
       <p class="muted small">${a7 ? `Média 7 dias: <b>${num(a7)} kg</b>${a7prev ? ` (${a7 - a7prev <= 0 ? '' : '+'}${num(a7 - a7prev)} vs. semana anterior)` : ''}` : last ? `Último: ${num(last)} kg` : 'O peso oscila de dia para dia — o que conta é a média semanal.'}</p>

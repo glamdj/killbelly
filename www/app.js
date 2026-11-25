@@ -3046,11 +3046,11 @@
     return `<header><div><h1>${greet}, ${s.nome}</h1><div class="muted">${DAY_NAMES[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]}</div></div>
     <div class="streak" title="Dias seguidos com treino">\u{1F525} ${st}</div></header>
     ${banners()}${pr.vac ? `<div class="vac">\u{1F3D6}\uFE0F Modo f\xE9rias${s.feriasModo === "auto" && s.feriasFim ? ` at\xE9 ${fmtShort(s.feriasFim)}` : ""} \u2014 durma bem, o treino \xE9 ao fim da manh\xE3.</div>` : ""}
-    <section class="card"><h2>Treino de hoje</h2>${sessionCard(k, "am", cfg.am)}${sessionCard(k, "pm", cfg.pm)}</section>
     <section class="card"><h2>\u{1F4A7} \xC1gua <span class="right">${num(w / 1e3, 2)} / ${num(s.metaAgua / 1e3, 1)} L</span></h2>
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
       <div class="row"><button class="btn sm ghost" data-water="-${s.copoMl}">\u2212${s.copoMl}</button><button class="btn sm" data-water="${s.copoMl}">+ copo ${s.copoMl} ml</button><button class="btn sm" data-water="500">+ garrafa 500 ml</button></div>
       <p class="muted small">${w >= s.metaAgua ? "\u2705 Meta de hoje cumprida!" : `Faltam ${num((s.metaAgua - w) / 1e3, 2)} L (\u2248 ${Math.ceil((s.metaAgua - w) / s.copoMl)} copos).`} Ch\xE1 e infus\xF5es sem a\xE7\xFAcar tamb\xE9m contam.</p></section>
+    <section class="card"><h2>Treino de hoje</h2>${sessionCard(k, "am", cfg.am)}${sessionCard(k, "pm", cfg.pm)}</section>
     <section class="card"><h2>\u2696\uFE0F Peso de hoje</h2>
       <div class="row"><input id="inPeso" type="number" inputmode="decimal" step="0.1" placeholder="kg" value="${wt != null ? wt : ""}"><button class="btn sm" data-act="savePeso">Guardar</button></div>
       <p class="muted small">${a7 ? `M\xE9dia 7 dias: <b>${num(a7)} kg</b>${a7prev ? ` (${a7 - a7prev <= 0 ? "" : "+"}${num(a7 - a7prev)} vs. semana anterior)` : ""}` : last ? `\xDAltimo: ${num(last)} kg` : "O peso oscila de dia para dia \u2014 o que conta \xE9 a m\xE9dia semanal."}</p>
