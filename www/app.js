@@ -525,13 +525,177 @@
     }
   });
 
-  // node_modules/@capacitor/local-notifications/dist/esm/web.js
+  // node_modules/@capacitor-community/text-to-speech/dist/esm/web.js
   var web_exports = {};
   __export(web_exports, {
+    TextToSpeechWeb: () => TextToSpeechWeb
+  });
+  var TextToSpeechWeb;
+  var init_web = __esm({
+    "node_modules/@capacitor-community/text-to-speech/dist/esm/web.js"() {
+      init_dist();
+      TextToSpeechWeb = class extends WebPlugin {
+        constructor() {
+          super();
+          this.speechSynthesis = null;
+          if ("speechSynthesis" in window) {
+            this.speechSynthesis = window.speechSynthesis;
+            window.addEventListener("beforeunload", () => {
+              this.stop();
+            });
+          }
+        }
+        async speak(options) {
+          if (!this.speechSynthesis) {
+            this.throwUnsupportedError();
+          }
+          await this.stop();
+          const speechSynthesis = this.speechSynthesis;
+          const utterance = this.createSpeechSynthesisUtterance(options);
+          return new Promise((resolve, reject) => {
+            utterance.onend = () => {
+              resolve();
+            };
+            utterance.onerror = (event) => {
+              reject(event);
+            };
+            speechSynthesis.speak(utterance);
+          });
+        }
+        async stop() {
+          if (!this.speechSynthesis) {
+            this.throwUnsupportedError();
+          }
+          this.speechSynthesis.cancel();
+        }
+        async getSupportedLanguages() {
+          const voices = this.getSpeechSynthesisVoices();
+          const languages = voices.map((voice) => voice.lang);
+          const filteredLanguages = languages.filter((v, i, a) => a.indexOf(v) == i);
+          return { languages: filteredLanguages };
+        }
+        async getSupportedVoices() {
+          const voices = this.getSpeechSynthesisVoices();
+          return { voices };
+        }
+        async isLanguageSupported(options) {
+          const result = await this.getSupportedLanguages();
+          const isLanguageSupported = result.languages.includes(options.lang);
+          return { supported: isLanguageSupported };
+        }
+        async openInstall() {
+          this.throwUnimplementedError();
+        }
+        createSpeechSynthesisUtterance(options) {
+          const voices = this.getSpeechSynthesisVoices();
+          const utterance = new SpeechSynthesisUtterance();
+          const { text, lang, rate, pitch, volume, voice } = options;
+          if (voice !== void 0) {
+            utterance.voice = voices[voice];
+          }
+          if (volume !== void 0) {
+            utterance.volume = volume >= 0 && volume <= 1 ? volume : 1;
+          }
+          if (rate !== void 0) {
+            utterance.rate = rate >= 0.1 && rate <= 10 ? rate : 1;
+          }
+          if (pitch !== void 0) {
+            utterance.pitch = pitch >= 0 && pitch <= 2 ? pitch : 2;
+          }
+          if (lang) {
+            utterance.lang = lang;
+          }
+          utterance.text = text;
+          return utterance;
+        }
+        getSpeechSynthesisVoices() {
+          if (!this.speechSynthesis) {
+            this.throwUnsupportedError();
+          }
+          if (!this.supportedVoices || this.supportedVoices.length < 1) {
+            this.supportedVoices = this.speechSynthesis.getVoices();
+          }
+          return this.supportedVoices;
+        }
+        throwUnsupportedError() {
+          throw this.unavailable("SpeechSynthesis API not available in this browser.");
+        }
+        throwUnimplementedError() {
+          throw this.unimplemented("Not implemented on web.");
+        }
+      };
+    }
+  });
+
+  // node_modules/@capacitor-community/keep-awake/dist/esm/web.js
+  var web_exports2 = {};
+  __export(web_exports2, {
+    KeepAwakeWeb: () => KeepAwakeWeb
+  });
+  var KeepAwakeWeb;
+  var init_web2 = __esm({
+    "node_modules/@capacitor-community/keep-awake/dist/esm/web.js"() {
+      init_dist();
+      KeepAwakeWeb = class extends WebPlugin {
+        constructor() {
+          super(...arguments);
+          this.wakeLock = null;
+          this._isSupported = typeof navigator !== "undefined" && "wakeLock" in navigator;
+          this.handleVisibilityChange = () => {
+            if (document.visibilityState === "visible")
+              this.keepAwake();
+          };
+        }
+        async keepAwake() {
+          if (!this._isSupported) {
+            this.throwUnsupportedError();
+          }
+          if (this.wakeLock) {
+            await this.allowSleep();
+          }
+          this.wakeLock = await navigator.wakeLock.request("screen");
+          document.addEventListener("visibilitychange", this.handleVisibilityChange);
+          document.addEventListener("fullscreenchange", this.handleVisibilityChange);
+        }
+        async allowSleep() {
+          var _a;
+          if (!this._isSupported) {
+            this.throwUnsupportedError();
+          }
+          (_a = this.wakeLock) === null || _a === void 0 ? void 0 : _a.release();
+          this.wakeLock = null;
+          document.removeEventListener("visibilitychange", this.handleVisibilityChange);
+          document.removeEventListener("fullscreenchange", this.handleVisibilityChange);
+        }
+        async isSupported() {
+          const result = {
+            isSupported: this._isSupported
+          };
+          return result;
+        }
+        async isKeptAwake() {
+          if (!this._isSupported) {
+            this.throwUnsupportedError();
+          }
+          const result = {
+            isKeptAwake: !!this.wakeLock
+          };
+          return result;
+        }
+        throwUnsupportedError() {
+          throw this.unavailable("Screen Wake Lock API not available in this browser.");
+        }
+      };
+    }
+  });
+
+  // node_modules/@capacitor/local-notifications/dist/esm/web.js
+  var web_exports3 = {};
+  __export(web_exports3, {
     LocalNotificationsWeb: () => LocalNotificationsWeb
   });
   var LocalNotificationsWeb;
-  var init_web = __esm({
+  var init_web3 = __esm({
     "node_modules/@capacitor/local-notifications/dist/esm/web.js"() {
       init_dist();
       LocalNotificationsWeb = class extends WebPlugin {
@@ -761,6 +925,7 @@
       place: "Circuito do condom\xEDnio",
       dur: "40\u201345 min",
       note: "Aquecimento de 5\u20138 min primeiro. Descanso de 60\u201390 s entre s\xE9ries.",
+      rest: 75,
       items: [
         "Aquecimento: marcha r\xE1pida 3 min, c\xEDrculos de bra\xE7os, rota\xE7\xF5es de anca, 10 agachamentos, 20 s suspenso na barra",
         "Remada australiana na barra baixa \u2014 3 \xD7 8\u201312",
@@ -777,6 +942,7 @@
       place: "Circuito do condom\xEDnio",
       dur: "45\u201350 min",
       note: "Descanso de 60 s entre s\xE9ries.",
+      rest: 60,
       items: [
         "Aquecimento: marcha r\xE1pida 3 min, rota\xE7\xF5es de anca e tornozelos, 10 agachamentos",
         "Agachamento goblet com haltere 3 kg \u2014 3 \xD7 15",
@@ -793,6 +959,7 @@
       place: "Circuito do condom\xEDnio",
       dur: "35\u201340 min",
       note: "40 s de trabalho / 20 s de pausa. 3 voltas (4 a partir da 3.\xAA semana), 1\u20132 min entre voltas.",
+      guided: { type: "circuit", work: 40, rest: 20, roundRest: 90, rounds: [3, 4], ex: ["Agachamento com salto", "Remada australiana", "Saltos frontais sobre a trave", "Flex\xF5es", "Mountain climbers", "Eleva\xE7\xE3o de pernas no banco", "Prancha lateral"] },
       items: [
         "Aquecimento 5 min",
         "Agachamento com salto (ou burpees)",
@@ -811,6 +978,7 @@
       place: "Casa",
       dur: "15 min",
       note: "Na roda, ir s\xF3 at\xE9 onde consegue manter a lombar direita.",
+      rest: 45,
       items: [
         "Roda de abdominais, de joelhos \u2014 3 \xD7 6\u201310",
         "Russian twist com haltere 3 kg \u2014 3 \xD7 20",
@@ -831,7 +999,8 @@
       title: "Caminhada + jogging leve",
       place: "Rua / condom\xEDnio",
       dur: "25 min",
-      note: "Alternar 2 min a andar com 1 min a correr devagar. Lembre-se da altitude do Lubango: ritmo confort\xE1vel.",
+      note: "Alternar 2 min a andar com 1 min a correr devagar. Jogging = corrida lenta em que ainda consegue dizer frases curtas (esfor\xE7o 5\u20136 em 10). Se n\xE3o consegue falar, abrande. No Lubango a altitude cansa mais: ritmo confort\xE1vel.",
+      guided: { type: "intervals", warm: 300, reps: 6, work: 60, rest: 120 },
       items: ["Copo de \xE1gua ao acordar", "5 min a andar", "6 \xD7 (1 min jogging + 2 min a andar)", "Alongamentos 3 min"]
     },
     BIKE: {
@@ -866,7 +1035,8 @@
       title: "Corpo inteiro em casa (sem material)",
       place: "Casa / parque",
       dur: "35\u201340 min",
-      note: "Sem equipamento. 3 voltas ao circuito, 45\u201360 s de descanso entre exerc\xEDcios. Uma cadeira firme chega.",
+      note: "Sem equipamento. 3 s\xE9ries de cada exerc\xEDcio, 45\u201360 s de descanso entre s\xE9ries. Uma cadeira firme chega.",
+      rest: 50,
       items: [
         "Aquecimento: marcha no lugar 3 min, c\xEDrculos de bra\xE7os, 10 agachamentos",
         "Agachamento \u2014 3 \xD7 15\u201320",
@@ -883,6 +1053,7 @@
       place: "Casa",
       dur: "15 min",
       note: "Lombar sempre controlada.",
+      rest: 40,
       items: [
         "Hollow hold \u2014 3 \xD7 20\u201330 s",
         "Dead bug \u2014 3 \xD7 8 cada lado",
@@ -1548,7 +1719,7 @@
     if (running) return;
     running = true;
     let last = 0;
-    const tick = (now) => {
+    const tick2 = (now) => {
       if (now - last > 33) {
         last = now;
         document.querySelectorAll("svg[data-anim]").forEach((svg) => {
@@ -1557,10 +1728,197 @@
           svg.innerHTML = drawFrame(svg.dataset.anim, now / a.dur);
         });
       }
-      requestAnimationFrame(tick);
+      requestAnimationFrame(tick2);
     };
-    requestAnimationFrame(tick);
+    requestAnimationFrame(tick2);
   }
+
+  // src/coach.js
+  init_dist();
+
+  // node_modules/@capacitor-community/text-to-speech/dist/esm/index.js
+  init_dist();
+
+  // node_modules/@capacitor-community/text-to-speech/dist/esm/definitions.js
+  var QueueStrategy;
+  (function(QueueStrategy2) {
+    QueueStrategy2[QueueStrategy2["Flush"] = 0] = "Flush";
+    QueueStrategy2[QueueStrategy2["Add"] = 1] = "Add";
+  })(QueueStrategy || (QueueStrategy = {}));
+
+  // node_modules/@capacitor-community/text-to-speech/dist/esm/index.js
+  var TextToSpeech = registerPlugin("TextToSpeech", {
+    web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.TextToSpeechWeb())
+  });
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis;
+  }
+
+  // node_modules/@capacitor-community/keep-awake/dist/esm/index.js
+  init_dist();
+  var KeepAwake = registerPlugin("KeepAwake", {
+    web: () => Promise.resolve().then(() => (init_web2(), web_exports2)).then((m) => new m.KeepAwakeWeb())
+  });
+
+  // src/coach.js
+  var voiceOn = true;
+  var setVoice = (v) => {
+    voiceOn = v;
+  };
+  function say(text) {
+    if (!voiceOn || !text) return;
+    if (Capacitor.isNativePlatform()) {
+      TextToSpeech.stop().catch(() => {
+      }).finally(() => TextToSpeech.speak({ text, lang: "pt-PT", rate: 1.05, pitch: 1, volume: 1, category: "playback" }).catch(() => {
+      }));
+    } else if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "pt-PT";
+      window.speechSynthesis.speak(u);
+    }
+  }
+  var actx = null;
+  function beep(freq = 880, ms = 140) {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = freq;
+      o.connect(g);
+      g.connect(actx.destination);
+      g.gain.setValueAtTime(0.25, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(1e-3, actx.currentTime + ms / 1e3);
+      o.start();
+      o.stop(actx.currentTime + ms / 1e3);
+    } catch {
+    }
+    try {
+      navigator.vibrate && navigator.vibrate(80);
+    } catch {
+    }
+  }
+  var steps = [];
+  var idx = 0;
+  var endAt = 0;
+  var paused = null;
+  var timer = null;
+  var onFinish = null;
+  var spoken = {};
+  var bar = document.createElement("div");
+  bar.id = "coach";
+  document.body.appendChild(bar);
+  var fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  function draw() {
+    document.body.classList.toggle("coaching", steps.length > 0);
+    if (!steps.length) {
+      bar.className = "";
+      bar.innerHTML = "";
+      return;
+    }
+    const st = steps[idx];
+    const rem = paused != null ? paused : Math.max(0, Math.ceil((endAt - Date.now()) / 1e3));
+    const pct = st.sec ? Math.min(100, (st.sec - rem) / st.sec * 100) : 0;
+    const next = steps[idx + 1];
+    bar.className = `on ${st.kind}`;
+    bar.innerHTML = `<div class="c-top"><span class="c-kind">${st.kind === "rest" ? "Pausa" : st.kind === "prep" ? "Prepare-se" : "Trabalho"}</span>
+    <span class="c-step">${idx + 1}/${steps.length}</span></div>
+    <div class="c-label">${st.label}</div>
+    <div class="c-time">${fmt(rem)}</div>
+    <div class="c-prog"><div style="width:${pct}%"></div></div>
+    ${next ? `<div class="c-next">A seguir: ${next.label}</div>` : ""}
+    <div class="c-btns"><button data-c="minus">\u221215 s</button><button data-c="pause">${paused != null ? "\u25B6 Retomar" : "\u23F8 Pausa"}</button><button data-c="plus">+15 s</button><button data-c="skip">\u23ED</button><button data-c="stop">\u2715</button></div>`;
+  }
+  function startStep(i) {
+    idx = i;
+    spoken = {};
+    const st = steps[idx];
+    endAt = Date.now() + st.sec * 1e3;
+    paused = null;
+    if (st.say) say(st.say);
+    beep(st.kind === "work" ? 1040 : 660, 220);
+    draw();
+  }
+  function finishStep() {
+    const st = steps[idx];
+    try {
+      st.onEnd && st.onEnd();
+    } catch {
+    }
+    if (idx + 1 < steps.length) startStep(idx + 1);
+    else end(true);
+  }
+  function tick() {
+    if (!steps.length || paused != null) return;
+    const st = steps[idx];
+    const rem = Math.ceil((endAt - Date.now()) / 1e3);
+    const elapsed = st.sec - rem;
+    for (const m of st.mid || []) if (elapsed >= m.at && !spoken["m" + m.at]) {
+      spoken["m" + m.at] = 1;
+      say(m.say);
+      beep(760, 160);
+    }
+    if (st.kind === "rest" && st.sec >= 20 && rem === 10 && !spoken.t10) {
+      spoken.t10 = 1;
+      say("Dez segundos");
+    }
+    if (rem <= 3 && rem >= 1 && !spoken["c" + rem]) {
+      spoken["c" + rem] = 1;
+      beep(880, 120);
+    }
+    if (rem <= 0) finishStep();
+    else draw();
+  }
+  function end(completed) {
+    clearInterval(timer);
+    timer = null;
+    const cb = onFinish;
+    steps = [];
+    onFinish = null;
+    paused = null;
+    draw();
+    KeepAwake.allowSleep().catch(() => {
+    });
+    if (cb) cb(completed);
+  }
+  function run(newSteps, finished) {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+    steps = newSteps.filter((s) => s.sec > 0);
+    onFinish = finished || null;
+    if (!steps.length) {
+      if (finished) finished(true);
+      return;
+    }
+    KeepAwake.keepAwake().catch(() => {
+    });
+    startStep(0);
+    timer = setInterval(tick, 250);
+  }
+  bar.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-c]");
+    if (!b || !steps.length) return;
+    const c = b.dataset.c;
+    if (c === "stop") return end(false);
+    if (c === "skip") return finishStep();
+    if (c === "pause") {
+      if (paused == null) {
+        paused = Math.max(0, Math.ceil((endAt - Date.now()) / 1e3));
+        say("Pausa");
+      } else {
+        endAt = Date.now() + paused * 1e3;
+        paused = null;
+      }
+    }
+    if (c === "plus" || c === "minus") {
+      const d = c === "plus" ? 15 : -15;
+      if (paused != null) paused = Math.max(1, paused + d);
+      else endAt = Math.max(Date.now() + 1e3, endAt + d * 1e3);
+      steps[idx].sec = Math.max(1, steps[idx].sec + d);
+    }
+    draw();
+  });
 
   // src/notify.js
   init_dist();
@@ -1582,7 +1940,7 @@
 
   // node_modules/@capacitor/local-notifications/dist/esm/index.js
   var LocalNotifications = registerPlugin("LocalNotifications", {
-    web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.LocalNotificationsWeb())
+    web: () => Promise.resolve().then(() => (init_web3(), web_exports3)).then((m) => new m.LocalNotificationsWeb())
   });
 
   // src/notify.js
@@ -1789,6 +2147,7 @@
     chaManha: "10:00",
     chaNoite: "21:15",
     metaPeso: "",
+    voz: true,
     feriasModo: "auto",
     feriasInicio: "2026-12-17",
     feriasFim: "2027-01-08",
@@ -1905,10 +2264,10 @@
     return n;
   }
   function avg7(endKey) {
-    const end = fromKey(endKey);
+    const end2 = fromKey(endKey);
     const vals = [];
     for (let i = 0; i < 7; i++) {
-      const v = state.weight[dkey2(addDays(end, -i))];
+      const v = state.weight[dkey2(addDays(end2, -i))];
       if (v) vals.push(v);
     }
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
@@ -1984,6 +2343,30 @@
     if (!id || !open[key]) return "";
     return `<div class="anim"><svg viewBox="0 0 160 110" data-anim="${id}"></svg><p class="small">${ANIMS[id].tip}</p></div>`;
   }
+  function parseSets(text) {
+    if (/\(\s*\d+\s*min/.test(text)) return null;
+    const m = text.match(/(\d+)\s*×\s*(\d+)?(?:–(\d+))?\s*(s\b)?/);
+    if (!m) return null;
+    const n = Number(m[1]);
+    if (!n || n > 10) return null;
+    const sec = m[4] && m[2] ? Number(m[2]) : null;
+    return { n, sec, sides: !!sec && /cada lado/.test(text) };
+  }
+  var exName = (t) => t.split(" \u2014 ")[0].replace(/\(.*?\)/g, "").trim();
+  function setsRow(k, slot, i, it, lg, editable) {
+    const ps = parseSets(it);
+    if (!ps || !editable) return "";
+    const done = lg.sets && lg.sets[i] || 0;
+    let b = "";
+    for (let j = 0; j < ps.n; j++) b += `<button class="setb ${j < done ? "ok" : j === done ? "next" : ""}" data-setb="${k}|${slot}|${i}|${j}">${j < done ? "\u2713" : j + 1}</button>`;
+    return `<div class="sets"><span class="muted small">${ps.sec ? `\u23F1 ${ps.sec} s${ps.sides ? " cada lado" : ""}` : "S\xE9ries"}</span>${b}</div>`;
+  }
+  function guidedBtns(k, slot, ses) {
+    const g = ses.guided;
+    if (!g) return "";
+    if (g.type === "circuit") return `<div class="row guided">${g.rounds.map((r) => `<button class="btn sm" data-guided="${k}|${slot}|${r}">\u{1F50A} Circuito guiado \xB7 ${r} voltas</button>`).join("")}</div>`;
+    return `<div class="row guided"><button class="btn sm" data-guided="${k}|${slot}|0">\u{1F50A} Iniciar intervalos com voz</button></div>`;
+  }
   function sessionCard(k, slot, cfg, editable = true) {
     if (!cfg) return "";
     const ses = SESSIONS[cfg.s];
@@ -1997,8 +2380,8 @@
       <div class="muted">${ses.dur} \xB7 ${ses.place}${tot > 1 ? ` \xB7 ${n}/${tot}` : ""}</div></div>
       <div class="chev">${lg.done ? "\u2705" : isOpen ? "\u25B4" : "\u25BE"}</div>
     </div>
-    ${isOpen ? `<div class="ses-b"><p class="note">${ses.note}</p>
-      ${ses.items.map((it, i) => `<div class="ex"><div class="ex-row"><label class="chk"><input type="checkbox" ${editable ? "" : "disabled"} data-check="${k}|${slot}|${i}" ${lg.checks.includes(i) ? "checked" : ""}><span>${it}</span></label>${animBtn(it, `an-${id}-${i}`)}</div>${animBox(it, `an-${id}-${i}`)}</div>`).join("")}
+    ${isOpen ? `<div class="ses-b"><p class="note">${ses.note}</p>${editable ? guidedBtns(k, slot, ses) : ""}
+      ${ses.items.map((it, i) => `<div class="ex"><div class="ex-row"><label class="chk"><input type="checkbox" ${editable ? "" : "disabled"} data-check="${k}|${slot}|${i}" ${lg.checks.includes(i) ? "checked" : ""}><span>${it}</span></label>${animBtn(it, `an-${id}-${i}`)}</div>${setsRow(k, slot, i, it, lg, editable)}${animBox(it, `an-${id}-${i}`)}</div>`).join("")}
       ${editable ? `<button class="btn ${lg.done ? "ghost" : ""}" data-done="${k}|${slot}">${lg.done ? "Desmarcar" : "Marcar treino como feito"}</button>` : ""}
     </div>` : ""}
   </div>`;
@@ -2183,6 +2566,8 @@
     ${tg("notifChas", "\u{1F375} Ch\xE1s")}${tm("chaManha", "Ch\xE1 da manh\xE3")}${tm("chaNoite", "Infus\xE3o da noite")}
     <p class="muted small">${lastSched ? lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? " (pr\xE9-visualiza\xE7\xE3o web)" : ""}${lastSched.warning ? " \u2014 sem permiss\xE3o de alarme exato, podem atrasar" : ""}.` : ""}</p>
     <button class="btn" data-act="test">Enviar notifica\xE7\xE3o de teste (5 s)</button></section>
+  <section class="card"><h2>\u{1F50A} Treinador</h2>${tg("voz", "Voz durante o treino")}<p class="muted small">Contagem de s\xE9ries, pausas e intervalos com voz em portugu\xEAs. O ecr\xE3 fica ligado enquanto o temporizador corre.</p>
+    <button class="btn ghost sm" data-act="testVoz">Testar voz</button></section>
   <section class="card"><h2>\u{1F3D6}\uFE0F Modo f\xE9rias</h2>
     <label class="fld"><span>Ativar</span><select data-set="feriasModo">${[["auto", "Autom\xE1tico nas datas"], ["on", "Sempre ligado"], ["off", "Desligado"]].map(([v, l]) => `<option value="${v}" ${s.feriasModo === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
     <label class="fld"><span>De</span><input type="date" data-set="feriasInicio" value="${s.feriasInicio}"></label>
@@ -2205,8 +2590,112 @@
     <div class="row"><button class="btn sm ghost" data-act="export">Exportar</button><button class="btn sm ghost" data-act="import">Importar</button></div></section>
   <p class="muted small center">KillBelly \xB7 os dados ficam s\xF3 no seu telem\xF3vel.</p>`;
   }
+  function sesOf(k, slot) {
+    return SESSIONS[profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s];
+  }
+  function markItem(k, slot, i) {
+    const l = slotLog(k, slot), ses = sesOf(k, slot);
+    l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s;
+    if (!l.checks.includes(i)) l.checks.push(i);
+    if (l.checks.length === ses.items.length) {
+      l.done = true;
+      say("Treino conclu\xEDdo. Muito bem!");
+    }
+  }
+  function setTap(k, slot, i, j) {
+    i = Number(i);
+    j = Number(j);
+    const ses = sesOf(k, slot), it = ses.items[i], ps = parseSets(it), l = slotLog(k, slot);
+    l.sets = l.sets || {};
+    const done = l.sets[i] || 0;
+    if (j < done) {
+      l.sets[i] = j;
+      l.checks = l.checks.filter((x) => x !== i);
+      l.done = false;
+      save();
+      render();
+      return;
+    }
+    const rest = ses.rest || 60, name = exName(it), nr = done + 1;
+    const finishSet = () => {
+      l.sets[i] = nr;
+      if (nr >= ps.n) {
+        markItem(k, slot, i);
+        if (!l.done) say(`${name} conclu\xEDdo.`);
+        save();
+        render();
+        return;
+      }
+      save();
+      render();
+      run(
+        [{ kind: "rest", label: `Pausa \xB7 a seguir: ${name}, s\xE9rie ${nr + 1} de ${ps.n}`, sec: rest, say: `Pausa. ${rest} segundos.` }],
+        (ok) => {
+          if (ok) say(ps.sec ? "Pr\xF3xima s\xE9rie. Toque para come\xE7ar." : `S\xE9rie ${nr + 1}. Vai!`);
+        }
+      );
+    };
+    if (!ps.sec) {
+      finishSet();
+      return;
+    }
+    const steps2 = [{ kind: "prep", label: `${name} \xB7 s\xE9rie ${nr}/${ps.n}`, sec: 5, say: `${name}. S\xE9rie ${nr} de ${ps.n}. Prepare-se.` }];
+    if (ps.sides) {
+      steps2.push({ kind: "work", label: `${name} \xB7 lado direito`, sec: ps.sec, say: "Vai! Lado direito." });
+      steps2.push({ kind: "prep", label: "Troca de lado", sec: 5, say: "Troca de lado." });
+      steps2.push({ kind: "work", label: `${name} \xB7 lado esquerdo`, sec: ps.sec, say: "Vai! Lado esquerdo." });
+    } else steps2.push({ kind: "work", label: `${name} \xB7 s\xE9rie ${nr}/${ps.n}`, sec: ps.sec, say: "Vai!" });
+    run(steps2, (ok) => {
+      if (ok) finishSet();
+    });
+  }
+  function guided(k, slot, rounds) {
+    const ses = sesOf(k, slot), g = ses.guided, steps2 = [];
+    if (g.type === "circuit") {
+      const R = Number(rounds);
+      steps2.push({ kind: "prep", label: `Circuito \xB7 ${R} voltas`, sec: 10, say: `Circuito de ${R} voltas. Primeiro: ${g.ex[0]}. Prepare-se.` });
+      for (let r = 1; r <= R; r++) {
+        g.ex.forEach((e, n) => {
+          const side = /lateral/i.test(e);
+          steps2.push({ kind: "work", label: `${e} \xB7 volta ${r}/${R}`, sec: g.work, say: `${e}. Vai!`, mid: side ? [{ at: Math.floor(g.work / 2), say: "Troca de lado" }] : [] });
+          const last = n === g.ex.length - 1;
+          if (last && r === R) return;
+          steps2.push(last ? { kind: "rest", label: `Fim da volta ${r} \xB7 a seguir: ${g.ex[0]}`, sec: g.roundRest, say: `Fim da volta ${r}. Descanse ${g.roundRest} segundos.` } : { kind: "rest", label: `Pausa \xB7 a seguir: ${g.ex[n + 1]}`, sec: g.rest, say: `Pausa. A seguir: ${g.ex[n + 1]}.` });
+        });
+      }
+      run(steps2, (ok) => {
+        if (!ok) return;
+        const l = slotLog(k, slot);
+        ses.items.forEach((_, i) => {
+          if (!l.checks.includes(i)) l.checks.push(i);
+        });
+        l.done = true;
+        l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s;
+        say("Circuito terminado. Excelente!");
+        save();
+        render();
+      });
+    } else {
+      steps2.push({ kind: "rest", label: "Aquecimento a andar", sec: g.warm, say: `Aquecimento. ${Math.round(g.warm / 60)} minutos a andar.` });
+      for (let r = 1; r <= g.reps; r++) {
+        steps2.push({ kind: "work", label: `Jogging leve ${r}/${g.reps}`, sec: g.work, say: r === 1 ? "Corre! Ritmo leve, em que consegue falar." : `Corre! ${r} de ${g.reps}.` });
+        steps2.push({ kind: "rest", label: `A andar ${r}/${g.reps}`, sec: g.rest, say: r === g.reps ? "Anda. \xDAltimo intervalo." : "Agora anda." });
+      }
+      run(steps2, (ok) => {
+        if (!ok) return;
+        const l = slotLog(k, slot);
+        ses.items.forEach((it, i) => {
+          if (/andar|jogging/.test(it) && !l.checks.includes(i)) l.checks.push(i);
+        });
+        l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s;
+        say("Terminado! Fa\xE7a os alongamentos.");
+        save();
+        render();
+      });
+    }
+  }
   app.addEventListener("click", async (e) => {
-    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan]");
+    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided]");
     if (!t) return;
     const d = t.dataset;
     if (d.tab) {
@@ -2254,6 +2743,14 @@
     if (d.plan) {
       planEdit = d.plan;
       render();
+      return;
+    }
+    if (d.setb) {
+      setTap(...d.setb.split("|"));
+      return;
+    }
+    if (d.guided) {
+      guided(...d.guided.split("|"));
       return;
     }
     if (d.shop) {
@@ -2305,6 +2802,9 @@
         break;
       case "test":
         await testNotification();
+        break;
+      case "testVoz":
+        say("Ol\xE1 Lu\xEDs. S\xE9rie um de tr\xEAs. Vai!");
         break;
       case "perm": {
         const r = await setupNotifications();
@@ -2376,6 +2876,7 @@
       else if (t.type === "number" || k === "aguaIntervalo" || k === "cinturaDia") v = t.value === "" ? "" : Number(t.value);
       else v = t.value;
       state.settings[k] = v;
+      if (k === "voz") setVoice(!!v);
       save(true);
     }
   });
@@ -2404,6 +2905,7 @@
     }
   });
   (async function init() {
+    setVoice(state.settings.voz !== false);
     render();
     startAnimLoop();
     try {

@@ -6,6 +6,7 @@ export const SESSIONS = {
     place: 'Circuito do condomínio',
     dur: '40–45 min',
     note: 'Aquecimento de 5–8 min primeiro. Descanso de 60–90 s entre séries.',
+    rest: 75,
     items: [
       'Aquecimento: marcha rápida 3 min, círculos de braços, rotações de anca, 10 agachamentos, 20 s suspenso na barra',
       'Remada australiana na barra baixa — 3 × 8–12',
@@ -22,6 +23,7 @@ export const SESSIONS = {
     place: 'Circuito do condomínio',
     dur: '45–50 min',
     note: 'Descanso de 60 s entre séries.',
+    rest: 60,
     items: [
       'Aquecimento: marcha rápida 3 min, rotações de anca e tornozelos, 10 agachamentos',
       'Agachamento goblet com haltere 3 kg — 3 × 15',
@@ -38,6 +40,7 @@ export const SESSIONS = {
     place: 'Circuito do condomínio',
     dur: '35–40 min',
     note: '40 s de trabalho / 20 s de pausa. 3 voltas (4 a partir da 3.ª semana), 1–2 min entre voltas.',
+    guided: { type: 'circuit', work: 40, rest: 20, roundRest: 90, rounds: [3, 4], ex: ['Agachamento com salto', 'Remada australiana', 'Saltos frontais sobre a trave', 'Flexões', 'Mountain climbers', 'Elevação de pernas no banco', 'Prancha lateral'] },
     items: [
       'Aquecimento 5 min',
       'Agachamento com salto (ou burpees)',
@@ -56,6 +59,7 @@ export const SESSIONS = {
     place: 'Casa',
     dur: '15 min',
     note: 'Na roda, ir só até onde consegue manter a lombar direita.',
+    rest: 45,
     items: [
       'Roda de abdominais, de joelhos — 3 × 6–10',
       'Russian twist com haltere 3 kg — 3 × 20',
@@ -76,7 +80,8 @@ export const SESSIONS = {
     title: 'Caminhada + jogging leve',
     place: 'Rua / condomínio',
     dur: '25 min',
-    note: 'Alternar 2 min a andar com 1 min a correr devagar. Lembre-se da altitude do Lubango: ritmo confortável.',
+    note: 'Alternar 2 min a andar com 1 min a correr devagar. Jogging = corrida lenta em que ainda consegue dizer frases curtas (esforço 5–6 em 10). Se não consegue falar, abrande. No Lubango a altitude cansa mais: ritmo confortável.',
+    guided: { type: 'intervals', warm: 300, reps: 6, work: 60, rest: 120 },
     items: ['Copo de água ao acordar', '5 min a andar', '6 × (1 min jogging + 2 min a andar)', 'Alongamentos 3 min'],
   },
   BIKE: {
@@ -111,7 +116,8 @@ export const SESSIONS = {
     title: 'Corpo inteiro em casa (sem material)',
     place: 'Casa / parque',
     dur: '35–40 min',
-    note: 'Sem equipamento. 3 voltas ao circuito, 45–60 s de descanso entre exercícios. Uma cadeira firme chega.',
+    note: 'Sem equipamento. 3 séries de cada exercício, 45–60 s de descanso entre séries. Uma cadeira firme chega.',
+    rest: 50,
     items: [
       'Aquecimento: marcha no lugar 3 min, círculos de braços, 10 agachamentos',
       'Agachamento — 3 × 15–20',
@@ -128,6 +134,7 @@ export const SESSIONS = {
     place: 'Casa',
     dur: '15 min',
     note: 'Lombar sempre controlada.',
+    rest: 40,
     items: [
       'Hollow hold — 3 × 20–30 s',
       'Dead bug — 3 × 8 cada lado',

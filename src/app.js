@@ -1,5 +1,6 @@
 import { DEFAULT_WEEK_FERIAS, SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, ALC_TIPS } from './data.js';
 import { animFor, ANIMS, startAnimLoop } from './anims.js';
+import { run as coachRun, say, setVoice } from './coach.js';
 import { profile, isVacation, setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
 
 // ---------- Estado ----------
@@ -11,7 +12,7 @@ const DEFAULT_SETTINGS = {
   notifPeso: true, pesoHora: '05:05', cinturaDia: 1,
   notifCerveja: true, cervejaHora: '17:30', cervejaSabado: '13:30', metaCerveja: 10,
   notifChas: true, chaManha: '10:00', chaNoite: '21:15',
-  metaPeso: '',
+  metaPeso: '', voz: true,
   feriasModo: 'auto', feriasInicio: '2026-12-17', feriasFim: '2027-01-08',
   vPeso: '10:15', vAguaInicio: '10:30', vAguaFim: '22:30', vMetaAgua: 2500, vCerveja: '19:30', vChaManha: '16:00', vChaNoite: '23:00',
 };
@@ -152,6 +153,33 @@ function animBox(text, key) {
   return `<div class="anim"><svg viewBox="0 0 160 110" data-anim="${id}"></svg><p class="small">${ANIMS[id].tip}</p></div>`;
 }
 
+// Séries: "3 × 8–12", "3 × 30–45 s", "3 × 20–30 s cada lado"
+function parseSets(text) {
+  if (/\(\s*\d+\s*min/.test(text)) return null;
+  const m = text.match(/(\d+)\s*×\s*(\d+)?(?:–(\d+))?\s*(s\b)?/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!n || n > 10) return null;
+  const sec = m[4] && m[2] ? Number(m[2]) : null;
+  return { n, sec, sides: !!sec && /cada lado/.test(text) };
+}
+const exName = (t) => t.split(' — ')[0].replace(/\(.*?\)/g, '').trim();
+
+function setsRow(k, slot, i, it, lg, editable) {
+  const ps = parseSets(it);
+  if (!ps || !editable) return '';
+  const done = (lg.sets && lg.sets[i]) || 0;
+  let b = '';
+  for (let j = 0; j < ps.n; j++) b += `<button class="setb ${j < done ? 'ok' : j === done ? 'next' : ''}" data-setb="${k}|${slot}|${i}|${j}">${j < done ? '✓' : j + 1}</button>`;
+  return `<div class="sets"><span class="muted small">${ps.sec ? `⏱ ${ps.sec} s${ps.sides ? ' cada lado' : ''}` : 'Séries'}</span>${b}</div>`;
+}
+
+function guidedBtns(k, slot, ses) {
+  const g = ses.guided; if (!g) return '';
+  if (g.type === 'circuit') return `<div class="row guided">${g.rounds.map((r) => `<button class="btn sm" data-guided="${k}|${slot}|${r}">🔊 Circuito guiado · ${r} voltas</button>`).join('')}</div>`;
+  return `<div class="row guided"><button class="btn sm" data-guided="${k}|${slot}|0">🔊 Iniciar intervalos com voz</button></div>`;
+}
+
 function sessionCard(k, slot, cfg, editable = true) {
   if (!cfg) return '';
   const ses = SESSIONS[cfg.s];
@@ -165,8 +193,8 @@ function sessionCard(k, slot, cfg, editable = true) {
       <div class="muted">${ses.dur} · ${ses.place}${tot > 1 ? ` · ${n}/${tot}` : ''}</div></div>
       <div class="chev">${lg.done ? '✅' : isOpen ? '▴' : '▾'}</div>
     </div>
-    ${isOpen ? `<div class="ses-b"><p class="note">${ses.note}</p>
-      ${ses.items.map((it, i) => `<div class="ex"><div class="ex-row"><label class="chk"><input type="checkbox" ${editable ? '' : 'disabled'} data-check="${k}|${slot}|${i}" ${lg.checks.includes(i) ? 'checked' : ''}><span>${it}</span></label>${animBtn(it, `an-${id}-${i}`)}</div>${animBox(it, `an-${id}-${i}`)}</div>`).join('')}
+    ${isOpen ? `<div class="ses-b"><p class="note">${ses.note}</p>${editable ? guidedBtns(k, slot, ses) : ''}
+      ${ses.items.map((it, i) => `<div class="ex"><div class="ex-row"><label class="chk"><input type="checkbox" ${editable ? '' : 'disabled'} data-check="${k}|${slot}|${i}" ${lg.checks.includes(i) ? 'checked' : ''}><span>${it}</span></label>${animBtn(it, `an-${id}-${i}`)}</div>${setsRow(k, slot, i, it, lg, editable)}${animBox(it, `an-${id}-${i}`)}</div>`).join('')}
       ${editable ? `<button class="btn ${lg.done ? 'ghost' : ''}" data-done="${k}|${slot}">${lg.done ? 'Desmarcar' : 'Marcar treino como feito'}</button>` : ''}
     </div>` : ''}
   </div>`;
@@ -354,6 +382,8 @@ function vDef() {
     ${tg('notifChas', '🍵 Chás')}${tm('chaManha', 'Chá da manhã')}${tm('chaNoite', 'Infusão da noite')}
     <p class="muted small">${lastSched ? (lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? ' (pré-visualização web)' : ''}${lastSched.warning ? ' — sem permissão de alarme exato, podem atrasar' : ''}.`) : ''}</p>
     <button class="btn" data-act="test">Enviar notificação de teste (5 s)</button></section>
+  <section class="card"><h2>🔊 Treinador</h2>${tg('voz', 'Voz durante o treino')}<p class="muted small">Contagem de séries, pausas e intervalos com voz em português. O ecrã fica ligado enquanto o temporizador corre.</p>
+    <button class="btn ghost sm" data-act="testVoz">Testar voz</button></section>
   <section class="card"><h2>🏖️ Modo férias</h2>
     <label class="fld"><span>Ativar</span><select data-set="feriasModo">${[['auto', 'Automático nas datas'], ['on', 'Sempre ligado'], ['off', 'Desligado']].map(([v, l]) => `<option value="${v}" ${s.feriasModo === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
     <label class="fld"><span>De</span><input type="date" data-set="feriasInicio" value="${s.feriasInicio}"></label>
@@ -377,9 +407,79 @@ function vDef() {
   <p class="muted small center">KillBelly · os dados ficam só no seu telemóvel.</p>`;
 }
 
+// ---------- Treinador ----------
+function sesOf(k, slot) { return SESSIONS[profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s]; }
+function markItem(k, slot, i) {
+  const l = slotLog(k, slot), ses = sesOf(k, slot);
+  l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s;
+  if (!l.checks.includes(i)) l.checks.push(i);
+  if (l.checks.length === ses.items.length) { l.done = true; say('Treino concluído. Muito bem!'); }
+}
+function setTap(k, slot, i, j) {
+  i = Number(i); j = Number(j);
+  const ses = sesOf(k, slot), it = ses.items[i], ps = parseSets(it), l = slotLog(k, slot);
+  l.sets = l.sets || {};
+  const done = l.sets[i] || 0;
+  if (j < done) { l.sets[i] = j; l.checks = l.checks.filter((x) => x !== i); l.done = false; save(); render(); return; }
+  const rest = ses.rest || 60, name = exName(it), nr = done + 1;
+  const finishSet = () => {
+    l.sets[i] = nr;
+    if (nr >= ps.n) { markItem(k, slot, i); if (!l.done) say(`${name} concluído.`); save(); render(); return; }
+    save(); render();
+    coachRun([{ kind: 'rest', label: `Pausa · a seguir: ${name}, série ${nr + 1} de ${ps.n}`, sec: rest, say: `Pausa. ${rest} segundos.` }],
+      (ok) => { if (ok) say(ps.sec ? 'Próxima série. Toque para começar.' : `Série ${nr + 1}. Vai!`); });
+  };
+  if (!ps.sec) { finishSet(); return; }
+  const steps = [{ kind: 'prep', label: `${name} · série ${nr}/${ps.n}`, sec: 5, say: `${name}. Série ${nr} de ${ps.n}. Prepare-se.` }];
+  if (ps.sides) {
+    steps.push({ kind: 'work', label: `${name} · lado direito`, sec: ps.sec, say: 'Vai! Lado direito.' });
+    steps.push({ kind: 'prep', label: 'Troca de lado', sec: 5, say: 'Troca de lado.' });
+    steps.push({ kind: 'work', label: `${name} · lado esquerdo`, sec: ps.sec, say: 'Vai! Lado esquerdo.' });
+  } else steps.push({ kind: 'work', label: `${name} · série ${nr}/${ps.n}`, sec: ps.sec, say: 'Vai!' });
+  coachRun(steps, (ok) => { if (ok) finishSet(); });
+}
+function guided(k, slot, rounds) {
+  const ses = sesOf(k, slot), g = ses.guided, steps = [];
+  if (g.type === 'circuit') {
+    const R = Number(rounds);
+    steps.push({ kind: 'prep', label: `Circuito · ${R} voltas`, sec: 10, say: `Circuito de ${R} voltas. Primeiro: ${g.ex[0]}. Prepare-se.` });
+    for (let r = 1; r <= R; r++) {
+      g.ex.forEach((e, n) => {
+        const side = /lateral/i.test(e);
+        steps.push({ kind: 'work', label: `${e} · volta ${r}/${R}`, sec: g.work, say: `${e}. Vai!`, mid: side ? [{ at: Math.floor(g.work / 2), say: 'Troca de lado' }] : [] });
+        const last = n === g.ex.length - 1;
+        if (last && r === R) return;
+        steps.push(last
+          ? { kind: 'rest', label: `Fim da volta ${r} · a seguir: ${g.ex[0]}`, sec: g.roundRest, say: `Fim da volta ${r}. Descanse ${g.roundRest} segundos.` }
+          : { kind: 'rest', label: `Pausa · a seguir: ${g.ex[n + 1]}`, sec: g.rest, say: `Pausa. A seguir: ${g.ex[n + 1]}.` });
+      });
+    }
+    coachRun(steps, (ok) => {
+      if (!ok) return;
+      const l = slotLog(k, slot);
+      ses.items.forEach((_, i) => { if (!l.checks.includes(i)) l.checks.push(i); });
+      l.done = true; l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s;
+      say('Circuito terminado. Excelente!'); save(); render();
+    });
+  } else {
+    steps.push({ kind: 'rest', label: 'Aquecimento a andar', sec: g.warm, say: `Aquecimento. ${Math.round(g.warm / 60)} minutos a andar.` });
+    for (let r = 1; r <= g.reps; r++) {
+      steps.push({ kind: 'work', label: `Jogging leve ${r}/${g.reps}`, sec: g.work, say: r === 1 ? 'Corre! Ritmo leve, em que consegue falar.' : `Corre! ${r} de ${g.reps}.` });
+      steps.push({ kind: 'rest', label: `A andar ${r}/${g.reps}`, sec: g.rest, say: r === g.reps ? 'Anda. Último intervalo.' : 'Agora anda.' });
+    }
+    coachRun(steps, (ok) => {
+      if (!ok) return;
+      const l = slotLog(k, slot);
+      ses.items.forEach((it, i) => { if (/andar|jogging/.test(it) && !l.checks.includes(i)) l.checks.push(i); });
+      l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s;
+      say('Terminado! Faça os alongamentos.'); save(); render();
+    });
+  }
+}
+
 // ---------- Eventos ----------
 app.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan]');
+  const t = e.target.closest('[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided]');
   if (!t) return;
   const d = t.dataset;
   if (d.tab) { tab = d.tab; render(); window.scrollTo(0, 0); return; }
@@ -394,6 +494,8 @@ app.addEventListener('click', async (e) => {
   if (d.alc) { const [ty, n] = d.alc.split('|'), k = dkey(); state.alc[k] = state.alc[k] || {}; state.alc[k][ty] = Math.max(0, (state.alc[k][ty] || 0) + Number(n)); save(); render(); return; }
   if (d.nutri) { nutriTab = d.nutri; render(); return; }
   if (d.plan) { planEdit = d.plan; render(); return; }
+  if (d.setb) { setTap(...d.setb.split('|')); return; }
+  if (d.guided) { guided(...d.guided.split('|')); return; }
   if (d.shop) {
     const i = state.shop.sel.indexOf(d.shop);
     if (i >= 0) state.shop.sel.splice(i, 1); else state.shop.sel.push(d.shop);
@@ -414,6 +516,7 @@ app.addEventListener('click', async (e) => {
     case 'clearShop': state.shop = { sel: [], checked: {} }; save(); render(); break;
     case 'resetPlan': if (confirm('Repor o plano original?')) { if (planEdit === 'ferias') state.weekFerias = clone(DEFAULT_WEEK_FERIAS); else state.week = clone(DEFAULT_WEEK); save(true); render(); } break;
     case 'test': await testNotification(); break;
+    case 'testVoz': say('Olá Luís. Série um de três. Vai!'); break;
     case 'perm': { const r = await setupNotifications(); notifOk = r.ok; save(true); render(); break; }
     case 'exact': await openExactAlarmSettings(); break;
     case 'export': { const ta = document.getElementById('backup'); ta.value = JSON.stringify(state); ta.select(); try { await navigator.clipboard.writeText(ta.value); } catch {} break; }
@@ -447,7 +550,7 @@ app.addEventListener('change', (e) => {
     if (t.type === 'checkbox') v = t.checked;
     else if (t.type === 'number' || k === 'aguaIntervalo' || k === 'cinturaDia') v = t.value === '' ? '' : Number(t.value);
     else v = t.value;
-    state.settings[k] = v; save(true);
+    state.settings[k] = v; if (k === 'voz') setVoice(!!v); save(true);
   }
 });
 
@@ -474,6 +577,7 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 (async function init() {
+  setVoice(state.settings.voz !== false);
   render();
   startAnimLoop();
   try {
