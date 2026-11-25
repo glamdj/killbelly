@@ -213,6 +213,7 @@ export const ANIMS = {
 const MAP = [
   [/goblet|Agachamento goblet/i, 'squat'],
   [/Agachamento com salto|burpee/i, 'jumpsquat'],
+  [/^Agachamento/i, 'squat'],
   [/Afundos/i, 'lunge'],
   [/step-up|Subidas ao banco/i, 'stepup'],
   [/^Flexões/i, 'pushup'],

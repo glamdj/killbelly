@@ -1,6 +1,6 @@
 // Agendamento de notificações locais (Capacitor Local Notifications).
-// Todas as notificações são repetitivas ("on"), por isso funcionam mesmo com a app fechada
-// e são repostas pelo próprio plugin depois de reiniciar o telemóvel.
+// Agendadas para 14 dias de cada vez (funcionam com a app fechada e são repostas pelo plugin
+// depois de reiniciar o telemóvel). Sempre que a app abre, os 14 dias são recalculados.
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { SESSIONS } from './data.js';
@@ -58,99 +58,92 @@ export async function openExactAlarmSettings() {
   try { await LocalNotifications.changeExactNotificationSetting(); } catch {}
 }
 
-export function buildNotifications(state) {
+// ---------- Perfil ativo (normal ou férias) ----------
+const pad = (n) => String(n).padStart(2, '0');
+const dkey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+export function isVacation(state, date = new Date()) {
   const s = state.settings;
-  const list = [];
-  const base = { allowWhileIdle: true };
+  if (s.feriasModo === 'on') return true;
+  if (s.feriasModo === 'off') return false;
+  const k = dkey(date);
+  return !!(s.feriasInicio && s.feriasFim && k >= s.feriasInicio && k <= s.feriasFim);
+}
+export function profile(state, date = new Date()) {
+  const s = state.settings;
+  if (!isVacation(state, date)) return { vac: false, week: state.week, s };
+  return {
+    vac: true,
+    week: state.weekFerias,
+    s: {
+      ...s,
+      pesoHora: s.vPeso, aguaInicio: s.vAguaInicio, aguaFim: s.vAguaFim, metaAgua: s.vMetaAgua,
+      cervejaHora: s.vCerveja, cervejaSabado: s.vCerveja, chaManha: s.vChaManha, chaNoite: s.vChaNoite,
+    },
+  };
+}
 
-  // Treinos: aviso X minutos antes de cada sessão
-  if (s.notifTreino) {
-    for (let d = 0; d < 7; d++) {
+const DAYS_AHEAD = 14;
+const at = (date, t) => { const { h, m } = parseT(t); const d = new Date(date); d.setHours(h, m, 0, 0); return d; };
+
+// Notificações únicas ("at") para os próximos 14 dias, cada dia com o seu perfil.
+// São recalculadas sempre que a app abre, por isso a mudança para férias é automática.
+export function buildNotifications(state, from = new Date()) {
+  const list = [];
+  const now = from.getTime();
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  for (let di = 0; di < DAYS_AHEAD; di++) {
+    const day = new Date(start); day.setDate(start.getDate() + di);
+    const { vac, week, s } = profile(state, day);
+    const wd = day.getDay();
+    const base = 10000 + di * 100;
+    const push = (n) => { if (n.schedule.at.getTime() > now + 30000) list.push({ ...n, schedule: { ...n.schedule, allowWhileIdle: true } }); };
+
+    if (s.notifTreino) {
       for (const slot of ['am', 'pm']) {
-        const day = state.week[d][slot];
-        if (!day || day.s === 'REST') continue;
-        const ses = SESSIONS[day.s];
-        const { h, m } = minus(day.t, s.treinoAntes);
-        list.push({
-          id: 1000 + d * 10 + (slot === 'am' ? 1 : 2),
-          title: `${slot === 'am' ? '🌅' : parseInt(day.t) < 17 ? '☀️' : '🌙'} ${ses.title}`,
-          body: `Às ${day.t} · ${ses.dur} · ${ses.place}`,
-          channelId: 'treino',
-          actionTypeId: 'TREINO',
-          extra: { kind: 'treino', slot },
-          schedule: { ...base, on: { weekday: d + 1, hour: h, minute: m } },
+        const cfg = week[wd][slot];
+        if (!cfg || cfg.s === 'REST') continue;
+        const ses = SESSIONS[cfg.s];
+        const when = at(day, cfg.t); when.setMinutes(when.getMinutes() - s.treinoAntes);
+        push({
+          id: base + (slot === 'am' ? 1 : 2),
+          title: `${slot === 'am' ? (parseInt(cfg.t) < 12 ? '🌅' : '☀️') : parseInt(cfg.t) < 17 ? '☀️' : '🌙'} ${ses.title}`,
+          body: `Às ${cfg.t} · ${ses.dur} · ${ses.place}`,
+          channelId: 'treino', actionTypeId: 'TREINO', extra: { kind: 'treino', slot },
+          schedule: { at: when },
         });
       }
     }
-  }
-
-  // Água
-  if (s.notifAgua) {
-    const a = parseT(s.aguaInicio).h * 60 + parseT(s.aguaInicio).m;
-    const b = parseT(s.aguaFim).h * 60 + parseT(s.aguaFim).m;
-    let i = 0;
-    for (let t = a; t <= b && i < 40; t += s.aguaIntervalo, i++) {
-      list.push({
-        id: 2000 + i,
-        title: '💧 Hora de beber água',
-        body: `Um copo de ${s.copoMl} ml. Meta de hoje: ${(s.metaAgua / 1000).toFixed(1).replace('.', ',')} L.`,
-        channelId: 'agua',
-        actionTypeId: 'AGUA',
-        extra: { kind: 'agua' },
-        schedule: { ...base, on: { hour: Math.floor(t / 60), minute: t % 60 } },
-      });
+    if (s.notifAgua) {
+      const a = parseT(s.aguaInicio), b = parseT(s.aguaFim);
+      let i = 0;
+      for (let t = a.h * 60 + a.m; t <= b.h * 60 + b.m && i < 30; t += Number(s.aguaIntervalo), i++) {
+        push({
+          id: base + 40 + i,
+          title: '💧 Hora de beber água',
+          body: `Um copo de ${s.copoMl} ml. Meta de hoje: ${(s.metaAgua / 1000).toFixed(1).replace('.', ',')} L.`,
+          channelId: 'agua', actionTypeId: 'AGUA', extra: { kind: 'agua' },
+          schedule: { at: at(day, `${Math.floor(t / 60)}:${t % 60}`) },
+        });
+      }
+    }
+    if (s.notifPeso) {
+      push({ id: base + 10, title: '⚖️ Pesagem diária', body: 'Em jejum, depois da casa de banho e antes de beber água.', channelId: 'peso', extra: { kind: 'peso' }, schedule: { at: at(day, s.pesoHora) } });
+      if (wd === Number(s.cinturaDia)) {
+        const w = at(day, s.pesoHora); w.setMinutes(w.getMinutes() + 1);
+        push({ id: base + 11, title: '📏 Medir a cintura', body: 'Fita métrica à altura do umbigo, barriga relaxada, a expirar.', channelId: 'peso', extra: { kind: 'cintura' }, schedule: { at: w } });
+      }
+    }
+    if (s.notifCerveja && (vac || wd !== 0)) {
+      push({ id: base + 20, title: '🍷 Antes de beber…', body: 'Primeiro 500 ml de água ou infusão. Depois decide.', channelId: 'cerveja', extra: { kind: 'cerveja' }, schedule: { at: at(day, wd === 6 ? s.cervejaSabado : s.cervejaHora) } });
+    }
+    if (s.notifChas) {
+      push({ id: base + 30, title: '🍵 Chá', body: vac ? 'Chá verde, gengibre ou moringa — sem açúcar.' : 'Chá verde, gengibre ou moringa — sem açúcar.', channelId: 'chas', extra: { kind: 'cha' }, schedule: { at: at(day, s.chaManha) } });
+      push({ id: base + 31, title: '🌿 Infusão da noite', body: 'Camomila, erva-príncipe ou funcho. Ajuda a dormir e a desinchar.', channelId: 'chas', extra: { kind: 'cha' }, schedule: { at: at(day, s.chaNoite) } });
     }
   }
-
-  // Peso diário e cintura semanal
-  if (s.notifPeso) {
-    const p = parseT(s.pesoHora);
-    list.push({
-      id: 3001,
-      title: '⚖️ Pesagem diária',
-      body: 'Em jejum, depois da casa de banho e antes de beber água.',
-      channelId: 'peso',
-      extra: { kind: 'peso' },
-      schedule: { ...base, on: { hour: p.h, minute: p.m } },
-    });
-    const c = minus(s.pesoHora, -1);
-    list.push({
-      id: 3002,
-      title: '📏 Medir a cintura',
-      body: 'Fita métrica à altura do umbigo, barriga relaxada, a expirar.',
-      channelId: 'peso',
-      extra: { kind: 'cintura' },
-      schedule: { ...base, on: { weekday: Number(s.cinturaDia) + 1, hour: c.h, minute: c.m } },
-    });
-  }
-
-  // Fim do trabalho: troca da primeira cerveja
-  if (s.notifCerveja) {
-    for (let d = 1; d <= 6; d++) {
-      const t = parseT(d === 6 ? s.cervejaSabado : s.cervejaHora);
-      list.push({
-        id: 4000 + d,
-        title: '🍷 Antes de beber…',
-        body: 'Primeiro 500 ml de água ou infusão fresca. Depois decide.',
-        channelId: 'cerveja',
-        extra: { kind: 'cerveja' },
-        schedule: { ...base, on: { weekday: d + 1, hour: t.h, minute: t.m } },
-      });
-    }
-  }
-
-  // Chás
-  if (s.notifChas) {
-    const m = parseT(s.chaManha), n = parseT(s.chaNoite);
-    list.push({
-      id: 5001, title: '🍵 Chá da manhã', body: 'Chá verde, gengibre ou moringa — sem açúcar.',
-      channelId: 'chas', extra: { kind: 'cha' }, schedule: { ...base, on: { hour: m.h, minute: m.m } },
-    });
-    list.push({
-      id: 5002, title: '🌿 Infusão da noite', body: 'Camomila, erva-príncipe ou funcho. Ajuda a dormir e a desinchar.',
-      channelId: 'chas', extra: { kind: 'cha' }, schedule: { ...base, on: { hour: n.h, minute: n.m } },
-    });
-  }
+  // Aviso de segurança caso a app não seja aberta durante quase 2 semanas
+  const renew = new Date(start); renew.setDate(start.getDate() + DAYS_AHEAD - 2); renew.setHours(12, 0, 0, 0);
+  list.push({ id: 9000, title: '🔄 KillBelly', body: 'Abra a app para renovar os lembretes das próximas semanas.', channelId: 'treino', schedule: { at: renew, allowWhileIdle: true } });
   return list;
 }
 

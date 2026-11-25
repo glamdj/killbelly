@@ -1,6 +1,6 @@
-import { SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, ALC_TIPS } from './data.js';
+import { DEFAULT_WEEK_FERIAS, SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, ALC_TIPS } from './data.js';
 import { animFor, ANIMS, startAnimLoop } from './anims.js';
-import { setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
+import { profile, isVacation, setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
 
 // ---------- Estado ----------
 const KEY = 'killbelly.v1';
@@ -12,6 +12,8 @@ const DEFAULT_SETTINGS = {
   notifCerveja: true, cervejaHora: '17:30', cervejaSabado: '13:30', metaCerveja: 10,
   notifChas: true, chaManha: '10:00', chaNoite: '21:15',
   metaPeso: '',
+  feriasModo: 'auto', feriasInicio: '2026-12-17', feriasFim: '2027-01-08',
+  vPeso: '10:15', vAguaInicio: '10:30', vAguaFim: '22:30', vMetaAgua: 2500, vCerveja: '19:30', vChaManha: '16:00', vChaNoite: '23:00',
 };
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -22,6 +24,7 @@ function load() {
   s = s || {};
   return {
     week: s.week || clone(DEFAULT_WEEK),
+    weekFerias: s.weekFerias || clone(DEFAULT_WEEK_FERIAS),
     settings: { ...DEFAULT_SETTINGS, ...(s.settings || {}) },
     water: s.water || {}, weight: s.weight || {}, waist: s.waist || {}, alc: s.alc || migrateBeer(s.beer || {}),
     log: s.log || {}, shop: s.shop || { sel: [], checked: {} },
@@ -33,7 +36,7 @@ function save(resched = false) {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
   if (resched) scheduleSoon();
 }
-let schedTimer = null, lastSched = null;
+let schedTimer = null, lastSched = null, lastTz = new Date().getTimezoneOffset(), lastSchedAt = Date.now();
 function scheduleSoon() {
   clearTimeout(schedTimer);
   schedTimer = setTimeout(async () => {
@@ -124,6 +127,8 @@ function barChart(bars, { goal = null, h = 130 } = {}) {
 }
 
 // ---------- UI ----------
+let planEdit = null;
+const planWeek = () => ((planEdit || (isVacation(state) ? 'ferias' : 'normal')) === 'ferias' ? state.weekFerias : state.week);
 let tab = 'hoje', nutriTab = 'chas', open = {}, exactStatus = 'granted', notifOk = true;
 const app = document.getElementById('app');
 const TABS = [
@@ -175,8 +180,8 @@ function banners() {
 }
 
 function vHoje() {
-  const now = new Date(), k = dkey(now), cfg = state.week[now.getDay()];
-  const s = state.settings;
+  const now = new Date(), k = dkey(now), pr = profile(state, now), cfg = pr.week[now.getDay()];
+  const s = pr.s;
   const w = waterToday(), pct = Math.min(100, Math.round((w / s.metaAgua) * 100));
   const hr = now.getHours();
   const greet = hr < 12 ? 'Bom dia' : hr < 19 ? 'Boa tarde' : 'Boa noite';
@@ -194,7 +199,7 @@ function vHoje() {
   const st = streak();
   return `<header><div><h1>${greet}, ${s.nome}</h1><div class="muted">${DAY_NAMES[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]}</div></div>
     <div class="streak" title="Dias seguidos com treino">🔥 ${st}</div></header>
-    ${banners()}
+    ${banners()}${pr.vac ? `<div class="vac">🏖️ Modo férias${s.feriasModo === 'auto' && s.feriasFim ? ` até ${fmtShort(s.feriasFim)}` : ''} — durma bem, o treino é ao fim da manhã.</div>` : ''}
     <section class="card"><h2>Treino de hoje</h2>${sessionCard(k, 'am', cfg.am)}${sessionCard(k, 'pm', cfg.pm)}</section>
     <section class="card"><h2>💧 Água <span class="right">${num(w / 1000, 2)} / ${num(s.metaAgua / 1000, 1)} L</span></h2>
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
@@ -226,7 +231,7 @@ function vTreino() {
   }
   let weekDone = 0, weekPlanned = 0;
   for (let i = 0; i < 7; i++) {
-    const d = addDays(mondayOf(), i), l = state.log[dkey(d)] || {}, cfg = state.week[d.getDay()];
+    const d = addDays(mondayOf(), i), l = state.log[dkey(d)] || {}, cfg = profile(state, d).week[d.getDay()];
     for (const sl of ['am', 'pm']) { if (cfg[sl] && cfg[sl].s !== 'REST') weekPlanned++; if (l[sl] && l[sl].done) weekDone++; }
   }
   const recent = sortedKeys(state.log).reverse().filter(dayDone).slice(0, 10);
@@ -235,9 +240,11 @@ function vTreino() {
     <div class="bar-wrap"><div class="bar-fill" style="width:${weekPlanned ? Math.round((weekDone / weekPlanned) * 100) : 0}%"></div></div>
     <div class="cal">${['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((x) => `<div class="cal-h">${x}</div>`).join('')}${cells}</div>
     <p class="muted small">Últimas 4 semanas · verde claro = 1 sessão, verde escuro = 2.</p></section>
-  <section class="card"><h2>Plano semanal</h2><p class="muted small">Toque num dia para editar a sessão ou a hora. Os alarmes atualizam-se sozinhos.</p>
+  <section class="card"><h2>Plano semanal</h2>
+    <div class="seg">${[['normal', 'Normal (Lubango)'], ['ferias', '🏖️ Férias']].map(([id, l]) => `<button data-plan="${id}" class="${(planEdit || (isVacation(state) ? 'ferias' : 'normal')) === id ? 'on' : ''}">${l}${(isVacation(state) ? 'ferias' : 'normal') === id ? ' · ativo' : ''}</button>`).join('')}</div>
+    <p class="muted small">Toque num dia para editar a sessão ou a hora. Os alarmes atualizam-se sozinhos.</p>
     ${order.map((d) => {
-      const c = state.week[d], id = `plan-${d}`;
+      const c = planWeek()[d], id = `plan-${d}`;
       return `<div class="plan-d ${d === today.getDay() ? 'is-today' : ''}"><div class="plan-h" data-toggle="${id}"><b>${DAY_NAMES[d]}</b>
         <span class="muted small">${c.am.t} ${SESSIONS[c.am.s].title.split(' —')[0]} · ${c.pm.t} ${SESSIONS[c.pm.s].title.split(' —')[0]}</span></div>
         ${open[id] ? ['am', 'pm'].map((sl) => `<div class="plan-e"><span>${sl === 'am' ? '🌅' : '🌙'}</span><input type="time" value="${c[sl].t}" data-plan-t="${d}|${sl}"><select data-plan-s="${d}|${sl}">${opts(c[sl].s)}</select></div>`).join('') : ''}
@@ -250,7 +257,7 @@ function vTreino() {
   }).join('')}
     <p class="muted small"><b>Progressão:</b> semana 1 com 2 séries; semana 2 com 3; semana 3 mais reps ou menos descanso (circuito C com 4 voltas); semana 4 manter ou aliviar, e reavaliar.</p></section>
   <section class="card"><h2>Histórico</h2>${recent.length ? recent.map((k) => {
-    const l = state.log[k], c = state.week[fromKey(k).getDay()];
+    const l = state.log[k], c = profile(state, fromKey(k)).week[fromKey(k).getDay()];
     const parts = ['am', 'pm'].filter((sl) => l[sl] && l[sl].done).map((sl) => SESSIONS[(l[sl].s) || c[sl].s].title.split(' —')[0]);
     return `<div class="hist"><span>${DAY_NAMES[fromKey(k).getDay()].slice(0, 3)} ${fmtShort(k)}</span><span>${parts.join(' + ')}</span></div>`;
   }).join('') : '<p class="muted">Ainda sem treinos registados. O primeiro é o mais difícil 💪</p>'}</section>`;
@@ -347,6 +354,13 @@ function vDef() {
     ${tg('notifChas', '🍵 Chás')}${tm('chaManha', 'Chá da manhã')}${tm('chaNoite', 'Infusão da noite')}
     <p class="muted small">${lastSched ? (lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? ' (pré-visualização web)' : ''}${lastSched.warning ? ' — sem permissão de alarme exato, podem atrasar' : ''}.`) : ''}</p>
     <button class="btn" data-act="test">Enviar notificação de teste (5 s)</button></section>
+  <section class="card"><h2>🏖️ Modo férias</h2>
+    <label class="fld"><span>Ativar</span><select data-set="feriasModo">${[['auto', 'Automático nas datas'], ['on', 'Sempre ligado'], ['off', 'Desligado']].map(([v, l]) => `<option value="${v}" ${s.feriasModo === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+    <label class="fld"><span>De</span><input type="date" data-set="feriasInicio" value="${s.feriasInicio}"></label>
+    <label class="fld"><span>Até</span><input type="date" data-set="feriasFim" value="${s.feriasFim}"></label>
+    ${tm('vPeso', 'Pesagem')}${tm('vAguaInicio', 'Água desde')}${tm('vAguaFim', 'Água até')}${nm('vMetaAgua', 'Meta de água (ml)', 250)}
+    ${tm('vCerveja', 'Lembrete antes de beber')}${tm('vChaManha', 'Chá da tarde')}${tm('vChaNoite', 'Infusão da noite')}
+    <p class="muted small">Estado: ${isVacation(state) ? '<b>ativo</b>' : 'inativo'}. O plano de treino de férias edita-se no separador Treino.</p></section>
   <section class="card"><h2>Metas</h2>${nm('metaAgua', 'Água por dia (ml)', 250)}${nm('copoMl', 'Tamanho do copo (ml)', 50)}${nm('metaCerveja', 'Bebidas alcoólicas por semana (máx.)')}${nm('metaPeso', 'Peso objetivo (kg)', 0.5)}
     <p class="muted small">Água: cerca de 35 ml por kg de peso. No Lubango (altitude, ar seco) e nos dias de treino, 3 L é um bom alvo.</p></section>
   <section class="card"><h2>⌚ Huawei Watch GT 6</h2><ol class="small">
@@ -365,20 +379,21 @@ function vDef() {
 
 // ---------- Eventos ----------
 app.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del]');
+  const t = e.target.closest('[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan]');
   if (!t) return;
   const d = t.dataset;
   if (d.tab) { tab = d.tab; render(); window.scrollTo(0, 0); return; }
   if (d.toggle) { open[d.toggle] = !open[d.toggle]; render(); return; }
   if (d.done) {
     const [k, sl] = d.done.split('|'); const l = slotLog(k, sl);
-    l.done = !l.done; l.s = state.week[fromKey(k).getDay()][sl].s;
+    l.done = !l.done; l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][sl].s;
     if (l.done) { l.checks = SESSIONS[l.s].items.map((_, i) => i); open[`${k}-${sl}`] = false; }
     save(); render(); return;
   }
   if (d.water) { addWater(Number(d.water)); render(); return; }
   if (d.alc) { const [ty, n] = d.alc.split('|'), k = dkey(); state.alc[k] = state.alc[k] || {}; state.alc[k][ty] = Math.max(0, (state.alc[k][ty] || 0) + Number(n)); save(); render(); return; }
   if (d.nutri) { nutriTab = d.nutri; render(); return; }
+  if (d.plan) { planEdit = d.plan; render(); return; }
   if (d.shop) {
     const i = state.shop.sel.indexOf(d.shop);
     if (i >= 0) state.shop.sel.splice(i, 1); else state.shop.sel.push(d.shop);
@@ -397,7 +412,7 @@ app.addEventListener('click', async (e) => {
       break;
     }
     case 'clearShop': state.shop = { sel: [], checked: {} }; save(); render(); break;
-    case 'resetPlan': if (confirm('Repor o plano semanal original?')) { state.week = clone(DEFAULT_WEEK); save(true); render(); } break;
+    case 'resetPlan': if (confirm('Repor o plano original?')) { if (planEdit === 'ferias') state.weekFerias = clone(DEFAULT_WEEK_FERIAS); else state.week = clone(DEFAULT_WEEK); save(true); render(); } break;
     case 'test': await testNotification(); break;
     case 'perm': { const r = await setupNotifications(); notifOk = r.ok; save(true); render(); break; }
     case 'exact': await openExactAlarmSettings(); break;
@@ -418,15 +433,15 @@ app.addEventListener('change', (e) => {
   if (d.check) {
     const [k, sl, i] = d.check.split('|'); const l = slotLog(k, sl); const n = Number(i);
     if (t.checked) { if (!l.checks.includes(n)) l.checks.push(n); } else l.checks = l.checks.filter((x) => x !== n);
-    l.s = state.week[fromKey(k).getDay()][sl].s;
+    l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][sl].s;
     if (l.checks.length === SESSIONS[l.s].items.length) l.done = true;
     save(); render();
   } else if (d.buy) {
     state.shop.checked[d.buy] = t.checked; save();
   } else if (d.planT) {
-    const [day, sl] = d.planT.split('|'); state.week[day][sl].t = t.value; save(true); render();
+    const [day, sl] = d.planT.split('|'); planWeek()[day][sl].t = t.value; save(true); render();
   } else if (d.planS) {
-    const [day, sl] = d.planS.split('|'); state.week[day][sl].s = t.value; save(true); render();
+    const [day, sl] = d.planS.split('|'); planWeek()[day][sl].s = t.value; save(true); render();
   } else if (d.set) {
     const k = d.set; let v;
     if (t.type === 'checkbox') v = t.checked;
@@ -442,14 +457,20 @@ onAction((a) => {
   if (a.actionId === 'drink') addWater(state.settings.copoMl);
   else if (a.actionId === 'done' && extra.slot) {
     const k = dkey(), l = slotLog(k, extra.slot);
-    l.done = true; l.s = state.week[new Date().getDay()][extra.slot].s; l.checks = SESSIONS[l.s].items.map((_, i) => i); save();
+    l.done = true; l.s = profile(state).week[new Date().getDay()][extra.slot].s; l.checks = SESSIONS[l.s].items.map((_, i) => i); save();
   } else if (extra.kind) tab = 'hoje';
   render();
 });
 
 // Ao voltar à app, atualizar o ecrã (ex.: mudou o dia)
 document.addEventListener('visibilitychange', async () => {
-  if (!document.hidden) { exactStatus = await exactAlarmStatus(); render(); }
+  if (!document.hidden) {
+    exactStatus = await exactAlarmStatus();
+    const tz = new Date().getTimezoneOffset();
+    // Renova os lembretes se mudou o fuso horário (ex.: chegada a Portugal) ou de 6 em 6 horas
+    if (tz !== lastTz || Date.now() - lastSchedAt > 6 * 3600e3) { lastTz = tz; lastSchedAt = Date.now(); scheduleSoon(); }
+    render();
+  }
 });
 
 (async function init() {

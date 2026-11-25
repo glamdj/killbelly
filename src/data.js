@@ -107,6 +107,56 @@ export const SESSIONS = {
     note: 'Passo acelerado. Boa altura para ouvir um podcast.',
     items: ['Caminhada 40 min', 'Alongamentos 3 min'],
   },
+  CASA: {
+    title: 'Corpo inteiro em casa (sem material)',
+    place: 'Casa / parque',
+    dur: '35–40 min',
+    note: 'Sem equipamento. 3 voltas ao circuito, 45–60 s de descanso entre exercícios. Uma cadeira firme chega.',
+    items: [
+      'Aquecimento: marcha no lugar 3 min, círculos de braços, 10 agachamentos',
+      'Agachamento — 3 × 15–20',
+      'Flexões — 3 × 8–15 (mãos numa mesa se for difícil)',
+      'Afundos alternados — 3 × 10 cada perna',
+      'Fundos numa cadeira — 3 × 8–12',
+      'Ponte de glúteos — 3 × 15',
+      'Prancha frontal — 3 × 30–45 s',
+      'Dead bug — 3 × 8 cada lado',
+    ],
+  },
+  COREPT: {
+    title: 'Core em casa (sem material)',
+    place: 'Casa',
+    dur: '15 min',
+    note: 'Lombar sempre controlada.',
+    items: [
+      'Hollow hold — 3 × 20–30 s',
+      'Dead bug — 3 × 8 cada lado',
+      'Prancha lateral — 3 × 20–30 s cada lado',
+      'Mountain climbers — 3 × 30 s',
+      'Vacuum abdominal — 3 × 20 s',
+    ],
+  },
+  BTT: {
+    title: 'Volta de BTT',
+    place: 'Trilho',
+    dur: '1h30–2h',
+    note: 'Frio de dezembro: camadas, luvas e corta-vento. Levar água e uma banana. Regressar antes de escurecer (≈17h).',
+    items: ['Água + snack + luzes', 'Volta 1h30–2h', 'Alongamentos 5 min'],
+  },
+  BTTCURTA: {
+    title: 'BTT curta / estrada',
+    place: 'Rua / trilho',
+    dur: '1h',
+    note: 'Ritmo moderado, em que consegue falar.',
+    items: ['Água', 'Pedalada 1h', 'Alongamentos 3 min'],
+  },
+  PASSEIO: {
+    title: 'Caminhada / passeio',
+    place: 'Rua / natureza',
+    dur: '45–60 min',
+    note: 'Passo rápido. Pode ser em família, na praia ou na serra.',
+    items: ['Caminhada 45–60 min', 'Alongamentos 3 min'],
+  },
   REST: {
     title: 'Descanso + mobilidade',
     place: 'Casa',
@@ -127,6 +177,17 @@ export const DEFAULT_WEEK = {
   5: { am: { s: 'WALK', t: '05:20' }, pm: { s: 'C', t: '18:45' } },
   6: { am: { s: 'WALK', t: '05:20' }, pm: { s: 'BIKELONG', t: '15:30' } },
   0: { am: { s: 'WALKLONG', t: '07:00' }, pm: { s: 'CORE', t: '18:45' } },
+};
+
+// Férias em Portugal: acordar ≈10h, treino ao fim da manhã, 5 dias com treino
+export const DEFAULT_WEEK_FERIAS = {
+  1: { am: { s: 'BTTCURTA', t: '11:30' }, pm: { s: 'CASA', t: '17:30' } },
+  2: { am: { s: 'PASSEIO', t: '11:30' }, pm: { s: 'REST', t: '17:30' } },
+  3: { am: { s: 'BTT', t: '11:00' }, pm: { s: 'COREPT', t: '17:30' } },
+  4: { am: { s: 'REST', t: '11:30' }, pm: { s: 'REST', t: '17:30' } },
+  5: { am: { s: 'PASSEIO', t: '11:30' }, pm: { s: 'CASA', t: '17:30' } },
+  6: { am: { s: 'BTT', t: '11:00' }, pm: { s: 'REST', t: '17:30' } },
+  0: { am: { s: 'REST', t: '11:30' }, pm: { s: 'REST', t: '17:30' } },
 };
 
 export const TEAS = [
