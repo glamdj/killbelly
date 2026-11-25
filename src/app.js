@@ -1,4 +1,5 @@
 import { SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, BEER_TIPS } from './data.js';
+import { animFor, ANIMS, startAnimLoop } from './anims.js';
 import { setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
 
 // ---------- Estado ----------
@@ -132,6 +133,17 @@ function render() {
   <nav>${TABS.map(([id, ic, l]) => `<button data-tab="${id}" class="${tab === id ? 'on' : ''}"><span>${ic}</span>${l}</button>`).join('')}</nav>`;
 }
 
+function animBtn(text, key) {
+  const id = animFor(text);
+  if (!id) return '';
+  return `<button class="play ${open[key] ? 'on' : ''}" data-toggle="${key}" aria-label="Ver animação">${open[key] ? '■' : '▶'}</button>`;
+}
+function animBox(text, key) {
+  const id = animFor(text);
+  if (!id || !open[key]) return '';
+  return `<div class="anim"><svg viewBox="0 0 160 110" data-anim="${id}"></svg><p class="small">${ANIMS[id].tip}</p></div>`;
+}
+
 function sessionCard(k, slot, cfg, editable = true) {
   if (!cfg) return '';
   const ses = SESSIONS[cfg.s];
@@ -146,7 +158,7 @@ function sessionCard(k, slot, cfg, editable = true) {
       <div class="chev">${lg.done ? '✅' : isOpen ? '▴' : '▾'}</div>
     </div>
     ${isOpen ? `<div class="ses-b"><p class="note">${ses.note}</p>
-      ${ses.items.map((it, i) => `<label class="chk"><input type="checkbox" ${editable ? '' : 'disabled'} data-check="${k}|${slot}|${i}" ${lg.checks.includes(i) ? 'checked' : ''}><span>${it}</span></label>`).join('')}
+      ${ses.items.map((it, i) => `<div class="ex"><div class="ex-row"><label class="chk"><input type="checkbox" ${editable ? '' : 'disabled'} data-check="${k}|${slot}|${i}" ${lg.checks.includes(i) ? 'checked' : ''}><span>${it}</span></label>${animBtn(it, `an-${id}-${i}`)}</div>${animBox(it, `an-${id}-${i}`)}</div>`).join('')}
       ${editable ? `<button class="btn ${lg.done ? 'ghost' : ''}" data-done="${k}|${slot}">${lg.done ? 'Desmarcar' : 'Marcar treino como feito'}</button>` : ''}
     </div>` : ''}
   </div>`;
@@ -230,7 +242,7 @@ function vTreino() {
     <button class="btn ghost sm" data-act="resetPlan">Repor plano original</button></section>
   <section class="card"><h2>Sessões</h2>${Object.entries(SESSIONS).filter(([id]) => ['A', 'B', 'C', 'CORE'].includes(id)).map(([id, s]) => {
     const oid = `sesinfo-${id}`;
-    return `<div class="plan-d"><div class="plan-h" data-toggle="${oid}"><b>${s.title}</b><span class="muted small">${s.dur}</span></div>${open[oid] ? `<p class="note">${s.note}</p><ol class="small">${s.items.map((x) => `<li>${x}</li>`).join('')}</ol>` : ''}</div>`;
+    return `<div class="plan-d"><div class="plan-h" data-toggle="${oid}"><b>${s.title}</b><span class="muted small">${s.dur}</span></div>${open[oid] ? `<p class="note">${s.note}</p><div class="small">${s.items.map((x, i) => `<div class="ex"><div class="ex-row"><span class="ex-t">${i + 1}. ${x}</span>${animBtn(x, `an-${oid}-${i}`)}</div>${animBox(x, `an-${oid}-${i}`)}</div>`).join('')}</div>` : ''}</div>`;
   }).join('')}
     <p class="muted small"><b>Progressão:</b> semana 1 com 2 séries; semana 2 com 3; semana 3 mais reps ou menos descanso (circuito C com 4 voltas); semana 4 manter ou aliviar, e reavaliar.</p></section>
   <section class="card"><h2>Histórico</h2>${recent.length ? recent.map((k) => {
@@ -438,6 +450,7 @@ document.addEventListener('visibilitychange', async () => {
 
 (async function init() {
   render();
+  startAnimLoop();
   try {
     const r = await setupNotifications();
     notifOk = r.ok !== false || r.reason === 'web';
