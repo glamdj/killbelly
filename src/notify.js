@@ -11,7 +11,7 @@ const CHANNELS = [
   { id: 'treino', name: 'Treinos', description: 'Lembretes de treino' },
   { id: 'agua', name: 'Água', description: 'Lembretes para beber água' },
   { id: 'peso', name: 'Peso e cintura', description: 'Registo de peso e cintura' },
-  { id: 'cerveja', name: 'Fim do trabalho', description: 'Troca da primeira cerveja' },
+  { id: 'cerveja', name: 'Antes de beber', description: 'Água antes da primeira bebida' },
   { id: 'chas', name: 'Chás e infusões', description: 'Sugestões de chás' },
 ];
 
@@ -130,8 +130,8 @@ export function buildNotifications(state) {
       const t = parseT(d === 6 ? s.cervejaSabado : s.cervejaHora);
       list.push({
         id: 4000 + d,
-        title: '🍺 Antes da cerveja…',
-        body: '500 ml de água ou infusão gelada primeiro. Depois decide.',
+        title: '🍷 Antes de beber…',
+        body: 'Primeiro 500 ml de água ou infusão fresca. Depois decide.',
         channelId: 'cerveja',
         extra: { kind: 'cerveja' },
         schedule: { ...base, on: { weekday: d + 1, hour: t.h, minute: t.m } },

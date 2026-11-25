@@ -1,4 +1,4 @@
-import { SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, BEER_TIPS } from './data.js';
+import { SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, ALC_TIPS } from './data.js';
 import { animFor, ANIMS, startAnimLoop } from './anims.js';
 import { setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
 
@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS = {
 };
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
+function migrateBeer(b) { const o = {}; for (const [k, v] of Object.entries(b)) if (v) o[k] = { c: v }; return o; }
 function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch {}
@@ -22,7 +23,7 @@ function load() {
   return {
     week: s.week || clone(DEFAULT_WEEK),
     settings: { ...DEFAULT_SETTINGS, ...(s.settings || {}) },
-    water: s.water || {}, weight: s.weight || {}, waist: s.waist || {}, beer: s.beer || {},
+    water: s.water || {}, weight: s.weight || {}, waist: s.waist || {}, alc: s.alc || migrateBeer(s.beer || {}),
     log: s.log || {}, shop: s.shop || { sel: [], checked: {} },
   };
 }
@@ -58,9 +59,10 @@ function addWater(ml) {
   state.water[k] = Math.max(0, (state.water[k] || 0) + ml);
   save();
 }
+const alcDay = (k) => { const a = state.alc[k] || {}; return (a.c || 0) + (a.v || 0) + (a.o || 0); };
 function beerWeek(monday = mondayOf()) {
   let t = 0;
-  for (let i = 0; i < 7; i++) t += state.beer[dkey(addDays(monday, i))] || 0;
+  for (let i = 0; i < 7; i++) t += alcDay(dkey(addDays(monday, i)));
   return t;
 }
 function slotLog(k, slot) {
@@ -185,8 +187,9 @@ function vHoje() {
   const monday = dkey(mondayOf());
   const waistThisWeek = sortedKeys(state.waist).filter((x) => x >= monday);
   const showWaist = now.getDay() === Number(s.cinturaDia) || !waistThisWeek.length;
-  const bw = beerWeek(), bt = state.beer[k] || 0;
-  const tip = BEER_TIPS[now.getDate() % BEER_TIPS.length];
+  const bw = beerWeek(), at = state.alc[k] || {};
+  const tip = ALC_TIPS[now.getDate() % ALC_TIPS.length];
+  const alcRow = (t, ic, l) => `<div class="alc-r"><span>${ic} ${l}</span><button class="btn sm ghost" data-alc="${t}|-1">−</button><b>${at[t] || 0}</b><button class="btn sm" data-alc="${t}|1">+</button></div>`;
   const tea = hr < 12 ? TEAS[0] : hr < 16 ? TEAS[6] : hr < 19 ? TEAS[10] : TEAS[hr < 21 ? 5 : 4];
   const st = streak();
   return `<header><div><h1>${greet}, ${s.nome}</h1><div class="muted">${DAY_NAMES[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]}</div></div>
@@ -203,8 +206,8 @@ function vHoje() {
       ${showWaist ? `<h3>📏 Cintura (semanal)</h3><div class="row"><input id="inCintura" type="number" inputmode="decimal" step="0.5" placeholder="cm" value="${state.waist[k] ?? ''}"><button class="btn sm" data-act="saveCintura">Guardar</button></div>
       <p class="muted small">À altura do umbigo, barriga relaxada, a expirar.</p>` : ''}
     </section>
-    <section class="card"><h2>🍺 Cerveja <span class="right ${bw > s.metaCerveja ? 'bad' : ''}">${bw} / ${s.metaCerveja} esta semana</span></h2>
-      <div class="row"><button class="btn sm ghost" data-beer="-1">−1</button><div class="big">${bt} hoje</div><button class="btn sm" data-beer="1">+1</button></div>
+    <section class="card"><h2>🍷 Álcool <span class="right ${bw > s.metaCerveja ? 'bad' : ''}">${bw} / ${s.metaCerveja} bebidas esta semana</span></h2>
+      ${alcRow('c', '🍺', 'Cerveja (330 ml)')}${alcRow('v', '🍷', 'Vinho (copo 150 ml)')}${alcRow('o', '🥃', 'Destilado (dose 40 ml)')}
       <p class="muted small">💡 ${tip}</p></section>
     <section class="card tea"><h2>🍵 Sugestão para agora</h2><b>${tea.name}</b><p class="small">${tea.good}</p><p class="muted small">${tea.how}</p></section>`;
 }
@@ -290,7 +293,7 @@ function vProg() {
     ${ck.length ? `<details><summary>Registos</summary>${ck.slice().reverse().map((k) => `<div class="hist"><span>${fmtShort(k)}</span><span>${num(state.waist[k])} cm <button class="link" data-del="waist|${k}">apagar</button></span></div>`).join('')}</details>` : ''}
   </section>
   <section class="card"><h2>💧 Água — últimos 7 dias (L)</h2>${barChart(waterBars, { goal: s.metaAgua / 1000 })}</section>
-  <section class="card"><h2>🍺 Cerveja por semana</h2>${barChart(beerBars, { goal: s.metaCerveja })}<p class="muted small">A linha é a sua meta semanal (${s.metaCerveja}).</p></section>`;
+  <section class="card"><h2>🍷 Bebidas alcoólicas por semana</h2>${barChart(beerBars, { goal: s.metaCerveja })}<p class="muted small">A linha é a sua meta semanal (${s.metaCerveja}).</p></section>`;
 }
 
 function vNutri() {
@@ -340,11 +343,11 @@ function vDef() {
     <label class="fld"><span>Intervalo</span><select data-set="aguaIntervalo">${[45, 60, 90, 120].map((v) => `<option value="${v}" ${s.aguaIntervalo == v ? 'selected' : ''}>${v} min</option>`).join('')}</select></label>
     ${tg('notifPeso', '⚖️ Peso diário + cintura semanal')}${tm('pesoHora', 'Hora da pesagem')}
     <label class="fld"><span>Dia da cintura</span><select data-set="cinturaDia">${DAY_NAMES.map((d, i) => `<option value="${i}" ${s.cinturaDia == i ? 'selected' : ''}>${d}</option>`).join('')}</select></label>
-    ${tg('notifCerveja', '🍺 Lembrete antes da cerveja')}${tm('cervejaHora', 'Seg–Sex')}${tm('cervejaSabado', 'Sábado')}
+    ${tg('notifCerveja', '🍷 Lembrete antes de beber')}${tm('cervejaHora', 'Seg–Sex')}${tm('cervejaSabado', 'Sábado')}
     ${tg('notifChas', '🍵 Chás')}${tm('chaManha', 'Chá da manhã')}${tm('chaNoite', 'Infusão da noite')}
     <p class="muted small">${lastSched ? (lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? ' (pré-visualização web)' : ''}${lastSched.warning ? ' — sem permissão de alarme exato, podem atrasar' : ''}.`) : ''}</p>
     <button class="btn" data-act="test">Enviar notificação de teste (5 s)</button></section>
-  <section class="card"><h2>Metas</h2>${nm('metaAgua', 'Água por dia (ml)', 250)}${nm('copoMl', 'Tamanho do copo (ml)', 50)}${nm('metaCerveja', 'Cervejas por semana (máx.)')}${nm('metaPeso', 'Peso objetivo (kg)', 0.5)}
+  <section class="card"><h2>Metas</h2>${nm('metaAgua', 'Água por dia (ml)', 250)}${nm('copoMl', 'Tamanho do copo (ml)', 50)}${nm('metaCerveja', 'Bebidas alcoólicas por semana (máx.)')}${nm('metaPeso', 'Peso objetivo (kg)', 0.5)}
     <p class="muted small">Água: cerca de 35 ml por kg de peso. No Lubango (altitude, ar seco) e nos dias de treino, 3 L é um bom alvo.</p></section>
   <section class="card"><h2>⌚ Huawei Watch GT 6</h2><ol class="small">
     <li>Na app <b>Huawei Health</b> → Dispositivos → GT 6 → <b>Notificações</b>: ative e ligue o <b>KillBelly</b>.</li>
@@ -362,7 +365,7 @@ function vDef() {
 
 // ---------- Eventos ----------
 app.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-tab],[data-toggle],[data-done],[data-water],[data-beer],[data-act],[data-nutri],[data-shop],[data-del]');
+  const t = e.target.closest('[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del]');
   if (!t) return;
   const d = t.dataset;
   if (d.tab) { tab = d.tab; render(); window.scrollTo(0, 0); return; }
@@ -374,7 +377,7 @@ app.addEventListener('click', async (e) => {
     save(); render(); return;
   }
   if (d.water) { addWater(Number(d.water)); render(); return; }
-  if (d.beer) { const k = dkey(); state.beer[k] = Math.max(0, (state.beer[k] || 0) + Number(d.beer)); save(); render(); return; }
+  if (d.alc) { const [ty, n] = d.alc.split('|'), k = dkey(); state.alc[k] = state.alc[k] || {}; state.alc[k][ty] = Math.max(0, (state.alc[k][ty] || 0) + Number(n)); save(); render(); return; }
   if (d.nutri) { nutriTab = d.nutri; render(); return; }
   if (d.shop) {
     const i = state.shop.sel.indexOf(d.shop);

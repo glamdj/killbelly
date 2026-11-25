@@ -936,7 +936,7 @@
       how: "1 pau de canela + 2 cravinhos, ferver 5 min."
     },
     {
-      name: "Moringa (se encontrar)",
+      name: "Moringa",
       when: "Manh\xE3",
       good: "Folhas ricas em vitaminas e minerais. Sabor a erva.",
       how: "1 c. ch\xE1 de folha seca ou um punhado de folha fresca, 5 min. Junte lim\xE3o."
@@ -949,6 +949,7 @@
     }
   ];
   var DETOX_NOTE = 'Sobre "detox": quem desintoxica o corpo s\xE3o o f\xEDgado e os rins. Estes ch\xE1s n\xE3o queimam gordura sozinhos. Ajudam porque hidratam, aliviam o incha\xE7o e substituem cerveja, refrigerantes e sumos a\xE7ucarados \u2014 e isso faz muita diferen\xE7a.';
+  var ing = (q, i, c) => ({ q, i, c });
   var RECIPES = [
     // --- Pequeno-almoço ---
     {
@@ -957,13 +958,7 @@
       meal: "Pequeno-almo\xE7o",
       time: "10 min",
       serves: 1,
-      ing: [
-        { q: "40 g", i: "Aveia", c: "mercearia" },
-        { q: "200 ml", i: "Leite meio-gordo", c: "lacticinios" },
-        { q: "1", i: "Banana", c: "frescos" },
-        { q: "1 c. sopa", i: "Amendoim torrado sem sal", c: "mercearia" },
-        { q: "q.b.", i: "Canela", c: "mercearia" }
-      ],
+      ing: [ing("40 g", "Aveia", "mercearia"), ing("200 ml", "Leite meio-gordo", "lacticinios"), ing("1", "Banana", "frescos"), ing("1 c. sopa", "Amendoim torrado sem sal", "mercearia"), ing("q.b.", "Canela", "mercearia")],
       steps: ["Cozer a aveia no leite 4\u20135 min, mexendo.", "Servir com a banana \xE0s rodelas, o amendoim picado e canela."],
       tip: "Sem a\xE7\xFAcar: a banana j\xE1 ado\xE7a."
     },
@@ -973,14 +968,8 @@
       meal: "Pequeno-almo\xE7o",
       time: "15 min",
       serves: 1,
-      ing: [
-        { q: "2", i: "Ovos", c: "lacticinios" },
-        { q: "1", i: "Banana", c: "frescos" },
-        { q: "40 g", i: "Aveia", c: "mercearia" },
-        { q: "q.b.", i: "Canela", c: "mercearia" },
-        { q: "1", i: "Iogurte natural", c: "lacticinios" }
-      ],
-      steps: ["Triturar ovos, banana, aveia e canela.", "Fazer 4\u20135 panquecas numa frigideira antiaderente, sem \xF3leo.", "Servir com o iogurte por cima."],
+      ing: [ing("2", "Ovos", "lacticinios"), ing("1", "Banana", "frescos"), ing("40 g", "Aveia", "mercearia"), ing("q.b.", "Canela", "mercearia"), ing("1 pe\xE7a", "Papaia ou manga", "frescos")],
+      steps: ["Triturar ovos, banana, aveia e canela (ou esmagar com um garfo).", "Fazer 4\u20135 panquecas numa frigideira antiaderente, sem \xF3leo.", "Servir com fruta \xE0s fatias."],
       tip: "Sabe a doce e tem muita prote\xEDna."
     },
     {
@@ -989,71 +978,102 @@
       meal: "Pequeno-almo\xE7o",
       time: "10 min",
       serves: 1,
-      ing: [
-        { q: "3", i: "Ovos", c: "lacticinios" },
-        { q: "1", i: "Tomate", c: "frescos" },
-        { q: "\xBD", i: "Cebola", c: "frescos" },
-        { q: "1 fatia", i: "P\xE3o de forma integral", c: "mercearia" }
-      ],
+      ing: [ing("3", "Ovos", "lacticinios"), ing("1", "Tomate", "frescos"), ing("\xBD", "Cebola", "frescos"), ing("1 fatia", "P\xE3o de forma integral", "mercearia")],
       steps: ["Saltear a cebola e o tomate picados 3 min.", "Juntar os ovos batidos com sal e mexer em lume brando.", "Servir com a fatia de p\xE3o torrada."],
       tip: "Uma fatia de p\xE3o, n\xE3o tr\xEAs."
     },
-    // --- Almoços / jantares ---
+    // --- Marisco ---
     {
-      id: "frango-forno",
-      name: "Frango no forno com batata-doce e legumes",
+      id: "camarao",
+      name: "Camar\xE3o salteado com alho e legumes",
       meal: "Almo\xE7o / jantar",
-      time: "45 min",
+      time: "20 min",
       serves: 2,
-      ing: [
-        { q: "4", i: "Coxas de frango sem pele", c: "proteina" },
-        { q: "2 m\xE9dias", i: "Batata-doce", c: "frescos" },
-        { q: "2", i: "Cenoura", c: "frescos" },
-        { q: "1", i: "Pimento", c: "frescos" },
-        { q: "1", i: "Cebola", c: "frescos" },
-        { q: "3 dentes", i: "Alho", c: "frescos" },
-        { q: "1", i: "Lim\xE3o", c: "frescos" },
-        { q: "1 c. sopa", i: "Azeite ou \xF3leo", c: "mercearia" },
-        { q: "q.b.", i: "Colorau e oreg\xE3os", c: "mercearia" }
-      ],
-      steps: ["Temperar o frango com alho, lim\xE3o, colorau, oreg\xE3os e sal.", "P\xF4r tudo num tabuleiro com os legumes e a batata-doce aos peda\xE7os.", "Regar com o azeite e levar ao forno a 200 \xB0C, 35\u201340 min."],
-      tip: "Fa\xE7a a dobrar e leve para o almo\xE7o do dia seguinte."
+      ing: [ing("400 g", "Camar\xE3o", "peixe"), ing("4 dentes", "Alho", "frescos"), ing("1", "Pimento", "frescos"), ing("1", "Cebola", "frescos"), ing("1", "Courgette ou cenoura", "frescos"), ing("q.b.", "Coentros", "frescos"), ing("q.b.", "Jindungo", "frescos"), ing("1", "Lim\xE3o", "frescos"), ing("1 c. sopa", "Azeite", "mercearia")],
+      steps: ["Saltear alho e jindungo no azeite 1 min.", "Juntar os legumes \xE0s tiras e saltear 4\u20135 min (ficam estaladi\xE7os).", "Juntar o camar\xE3o descascado, 3\u20134 min at\xE9 ficar rosado.", "Temperar com lim\xE3o, sal e coentros."],
+      tip: "Com salada ou meia ch\xE1vena de arroz. O camar\xE3o tem muita prote\xEDna e poucas calorias."
     },
+    {
+      id: "ameijoas",
+      name: "Am\xEAijoas \xE0 Bulh\xE3o Pato",
+      meal: "Jantar / petisco",
+      time: "20 min",
+      serves: 2,
+      ing: [ing("1 kg", "Am\xEAijoas", "peixe"), ing("5 dentes", "Alho", "frescos"), ing("1 molho", "Coentros", "frescos"), ing("1", "Lim\xE3o", "frescos"), ing("2 c. sopa", "Azeite", "mercearia")],
+      steps: ["Deixar as am\xEAijoas 1\u20132 h em \xE1gua com sal para largarem a areia.", "Alourar o alho laminado no azeite.", "Juntar as am\xEAijoas, tapar e abanar o tacho at\xE9 abrirem (5 min).", "Juntar coentros picados e lim\xE3o. Deitar fora as que n\xE3o abrirem."],
+      tip: "\xD3timo petisco para a noite em vez de amendoins e batatas fritas."
+    },
+    {
+      id: "mexilhao",
+      name: "Mexilh\xE3o com tomate e cebolada",
+      meal: "Jantar",
+      time: "25 min",
+      serves: 2,
+      ing: [ing("1 kg", "Mexilh\xE3o", "peixe"), ing("2", "Cebola", "frescos"), ing("3", "Tomate", "frescos"), ing("3 dentes", "Alho", "frescos"), ing("1", "Pimento", "frescos"), ing("q.b.", "Salsa ou coentros", "frescos"), ing("1 c. sopa", "Azeite", "mercearia")],
+      steps: ["Lavar e raspar os mexilh\xF5es.", "Fazer um refogado de cebola, alho, pimento e tomate.", "Juntar os mexilh\xF5es, tapar e cozinhar 6\u20138 min at\xE9 abrirem.", "Polvilhar com salsa."],
+      tip: "Molhe pouco p\xE3o no molho \u2014 \xE9 a\xED que se escondem as calorias."
+    },
+    {
+      id: "lulas",
+      name: "Lulas grelhadas com salada",
+      meal: "Almo\xE7o / jantar",
+      time: "20 min",
+      serves: 2,
+      ing: [ing("600 g", "Lulas limpas", "peixe"), ing("3 dentes", "Alho", "frescos"), ing("1", "Lim\xE3o", "frescos"), ing("\xBD p\xE9", "Alface", "frescos"), ing("2", "Tomate", "frescos"), ing("1", "Cebola", "frescos"), ing("1 c. sopa", "Azeite", "mercearia")],
+      steps: ["Temperar as lulas com alho, lim\xE3o e sal.", "Grelhar na frigideira bem quente, 2\u20133 min de cada lado (mais tempo ficam duras).", "Servir com salada de alface, tomate e cebola."],
+      tip: "Com 1\u20132 batatas-doces cozidas fica uma refei\xE7\xE3o completa."
+    },
+    {
+      id: "polvo",
+      name: "Salada de polvo",
+      meal: "Almo\xE7o / jantar",
+      time: "50 min",
+      serves: 3,
+      ing: [ing("1 kg", "Polvo", "peixe"), ing("1", "Cebola", "frescos"), ing("1", "Pimento vermelho", "frescos"), ing("1", "Pimento verde", "frescos"), ing("1 molho", "Coentros", "frescos"), ing("2 c. sopa", "Azeite", "mercearia"), ing("2 c. sopa", "Vinagre", "mercearia")],
+      steps: ["Cozer o polvo em \xE1gua sem sal, 40\u201345 min (de prefer\xEAncia congelado antes, fica mais tenro).", "Deixar arrefecer e cortar aos peda\xE7os.", "Misturar com cebola, pimentos e coentros picados; temperar com azeite, vinagre e sal."],
+      tip: "Melhor no dia seguinte. D\xE1 para 2\u20133 refei\xE7\xF5es."
+    },
+    {
+      id: "choco",
+      name: "Choco estufado com tomate",
+      meal: "Almo\xE7o / jantar",
+      time: "40 min",
+      serves: 3,
+      ing: [ing("800 g", "Choco limpo", "peixe"), ing("2", "Cebola", "frescos"), ing("4", "Tomate", "frescos"), ing("4 dentes", "Alho", "frescos"), ing("1", "Pimento", "frescos"), ing("1 folha", "Louro", "mercearia"), ing("1 c. sopa", "Azeite", "mercearia")],
+      steps: ["Refogar cebola, alho, pimento e louro no azeite.", "Juntar o tomate e o choco \xE0s tiras.", "Tapar e estufar 25\u201330 min em lume brando."],
+      tip: "Com arroz ou batata-doce cozida \u2014 meia ch\xE1vena chega."
+    },
+    // --- Peixe ---
     {
       id: "peixe-grelhado",
-      name: "Peixe grelhado com arroz e salada",
+      name: "Corvina ou garoupa grelhada com legumes",
       meal: "Almo\xE7o / jantar",
-      time: "30 min",
+      time: "25 min",
       serves: 1,
-      ing: [
-        { q: "200 g", i: "Peixe (corvina, cacusso, pescada ou carapau)", c: "proteina" },
-        { q: "\xBD ch\xE1vena", i: "Arroz", c: "mercearia" },
-        { q: "1", i: "Lim\xE3o", c: "frescos" },
-        { q: "2 dentes", i: "Alho", c: "frescos" },
-        { q: "\xBD p\xE9", i: "Alface", c: "frescos" },
-        { q: "1", i: "Tomate", c: "frescos" },
-        { q: "\xBD", i: "Pepino", c: "frescos" }
-      ],
-      steps: ["Temperar o peixe com alho, lim\xE3o e sal 15 min.", "Cozer o arroz.", "Grelhar o peixe 4\u20136 min de cada lado.", "Servir com salada de alface, tomate e pepino."],
-      tip: "Metade do prato salada, \xBC peixe, \xBC arroz."
+      ing: [ing("250 g", "Corvina, garoupa ou pescada (posta ou filete)", "peixe"), ing("1", "Lim\xE3o", "frescos"), ing("2 dentes", "Alho", "frescos"), ing("2", "Cenoura", "frescos"), ing("100 g", "Feij\xE3o-verde", "frescos"), ing("1 m\xE9dia", "Batata-doce", "frescos")],
+      steps: ["Temperar o peixe com alho, lim\xE3o e sal 15 min.", "Cozer a batata-doce, a cenoura e o feij\xE3o-verde.", "Grelhar o peixe na frigideira, 4\u20135 min de cada lado.", "Regar tudo com um fio de azeite."],
+      tip: "Metade do prato legumes, \xBC peixe, \xBC batata-doce."
     },
     {
-      id: "bolonhesa",
-      name: "Esparguete \xE0 bolonhesa leve",
+      id: "caldeirada",
+      name: "Caldeirada leve de peixe",
       meal: "Almo\xE7o / jantar",
-      time: "30 min",
+      time: "40 min",
       serves: 3,
-      ing: [
-        { q: "400 g", i: "Carne picada de vaca (magra)", c: "proteina" },
-        { q: "200 g", i: "Esparguete", c: "mercearia" },
-        { q: "1 lata", i: "Tomate pelado", c: "mercearia" },
-        { q: "2", i: "Cenoura", c: "frescos" },
-        { q: "1", i: "Cebola", c: "frescos" },
-        { q: "2 dentes", i: "Alho", c: "frescos" },
-        { q: "1", i: "Pimento", c: "frescos" }
-      ],
-      steps: ["Refogar cebola e alho com pouco \xF3leo; juntar a carne e deixar alourar.", "Juntar cenoura ralada, pimento picado e o tomate; 15 min em lume brando.", "Cozer a massa e servir com bastante molho e pouca massa."],
-      tip: 'A cenoura e o pimento "esticam" o molho: mais volume, menos calorias.'
+      ing: [ing("800 g", "Peixe variado (garoupa, corvina, pescada)", "peixe"), ing("2", "Cebola", "frescos"), ing("4", "Tomate", "frescos"), ing("1", "Pimento", "frescos"), ing("2 m\xE9dias", "Batata-doce", "frescos"), ing("4 dentes", "Alho", "frescos"), ing("q.b.", "Coentros", "frescos"), ing("1 c. sopa", "Azeite", "mercearia")],
+      steps: ["No tacho, fazer camadas: cebola, tomate, pimento, batata-doce \xE0s rodelas e peixe. Repetir.", "Juntar alho, coentros, sal, o azeite e um copo de \xE1gua.", "Tapar e cozinhar 25 min sem mexer (abanar o tacho)."],
+      tip: "Pode juntar tamb\xE9m camar\xE3o ou mexilh\xE3o."
+    },
+    // --- Carne / ovos ---
+    {
+      id: "frango-frigideira",
+      name: "Frango na frigideira com legumes salteados",
+      meal: "Almo\xE7o / jantar",
+      time: "25 min",
+      serves: 2,
+      ing: [ing("400 g", "Peito de frango", "proteina"), ing("2", "Cenoura", "frescos"), ing("1", "Pimento", "frescos"), ing("1", "Cebola", "frescos"), ing("3 dentes", "Alho", "frescos"), ing("1", "Lim\xE3o", "frescos"), ing("q.b.", "Colorau e oreg\xE3os", "mercearia"), ing("1 c. sopa", "Azeite ou \xF3leo", "mercearia")],
+      steps: ["Cortar o frango em bifes finos e temperar com alho, lim\xE3o, colorau, oreg\xE3os e sal.", "Grelhar na frigideira 4\u20135 min de cada lado e reservar.", "Na mesma frigideira, saltear os legumes \xE0s tiras 5 min."],
+      tip: "Fa\xE7a a dobrar e leve para o almo\xE7o do dia seguinte."
     },
     {
       id: "frango-arroz",
@@ -1061,34 +1081,19 @@
       meal: "Almo\xE7o",
       time: "35 min",
       serves: 3,
-      ing: [
-        { q: "400 g", i: "Peito de frango", c: "proteina" },
-        { q: "1 ch\xE1vena", i: "Arroz", c: "mercearia" },
-        { q: "1 saco", i: "Legumes congelados (ervilha, cenoura, feij\xE3o-verde)", c: "mercearia" },
-        { q: "1", i: "Cebola", c: "frescos" },
-        { q: "2 dentes", i: "Alho", c: "frescos" },
-        { q: "2", i: "Tomate", c: "frescos" }
-      ],
+      ing: [ing("400 g", "Peito de frango", "proteina"), ing("1 ch\xE1vena", "Arroz", "mercearia"), ing("1 saco", "Legumes congelados (ervilha, cenoura, feij\xE3o-verde)", "mercearia"), ing("1", "Cebola", "frescos"), ing("2 dentes", "Alho", "frescos"), ing("2", "Tomate", "frescos")],
       steps: ["Refogar cebola, alho e tomate.", "Juntar o frango aos cubos e alourar.", "Juntar o arroz, os legumes e 2,5 ch\xE1venas de \xE1gua; 15\u201318 min tapado."],
-      tip: "Legumes congelados: baratos, duram e est\xE3o em qualquer supermercado."
+      tip: "Mais legumes do que arroz no prato."
     },
     {
-      id: "hamburguer",
-      name: "Hamb\xFArguer caseiro de frango com salada",
-      meal: "Jantar",
-      time: "20 min",
-      serves: 2,
-      ing: [
-        { q: "400 g", i: "Carne picada de frango (ou peito picado)", c: "proteina" },
-        { q: "1", i: "Ovos", c: "lacticinios" },
-        { q: "3 c. sopa", i: "Aveia", c: "mercearia" },
-        { q: "\xBD", i: "Cebola", c: "frescos" },
-        { q: "q.b.", i: "Salsa ou coentros", c: "frescos" },
-        { q: "\xBD p\xE9", i: "Alface", c: "frescos" },
-        { q: "1", i: "Tomate", c: "frescos" }
-      ],
-      steps: ["Misturar a carne, o ovo, a aveia, a cebola picada, salsa e sal.", "Formar 4 hamb\xFArgueres e grelhar 5 min de cada lado.", "Servir com salada (sem p\xE3o, ou com 1 p\xE3o pequeno)."],
-      tip: "Congele os que sobrarem, crus, separados com papel vegetal."
+      id: "bolonhesa",
+      name: "Esparguete \xE0 bolonhesa leve",
+      meal: "Almo\xE7o / jantar",
+      time: "30 min",
+      serves: 3,
+      ing: [ing("400 g", "Carne picada de vaca (magra)", "proteina"), ing("200 g", "Esparguete", "mercearia"), ing("1 lata", "Tomate pelado", "mercearia"), ing("2", "Cenoura", "frescos"), ing("1", "Cebola", "frescos"), ing("2 dentes", "Alho", "frescos"), ing("1", "Pimento", "frescos")],
+      steps: ["Refogar cebola e alho com pouco \xF3leo; juntar a carne e deixar alourar.", "Juntar cenoura ralada, pimento picado e o tomate; 15 min em lume brando.", "Cozer a massa e servir com bastante molho e pouca massa."],
+      tip: 'A cenoura e o pimento "esticam" o molho: mais volume, menos calorias.'
     },
     {
       id: "omelete",
@@ -1096,13 +1101,7 @@
       meal: "Jantar r\xE1pido",
       time: "10 min",
       serves: 1,
-      ing: [
-        { q: "3", i: "Ovos", c: "lacticinios" },
-        { q: "1 m\xE3o", i: "Espinafres (ou gimboa)", c: "frescos" },
-        { q: "1 fatia", i: "Queijo flamengo", c: "lacticinios" },
-        { q: "\xBD", i: "Cebola", c: "frescos" },
-        { q: "1 c. ch\xE1", i: "Azeite ou \xF3leo", c: "mercearia" }
-      ],
+      ing: [ing("3", "Ovos", "lacticinios"), ing("1 m\xE3o", "Espinafres (ou gimboa)", "frescos"), ing("1 fatia", "Queijo flamengo", "lacticinios"), ing("\xBD", "Cebola", "frescos"), ing("1 c. ch\xE1", "Azeite ou \xF3leo", "mercearia")],
       steps: ["Saltear cebola e espinafres 2\u20133 min.", "Juntar os ovos batidos com sal e o queijo em tiras.", "Cozinhar em lume brando e dobrar."],
       tip: "Pronta em 10 minutos depois do treino da noite."
     },
@@ -1112,34 +1111,9 @@
       meal: "Almo\xE7o r\xE1pido",
       time: "10 min",
       serves: 1,
-      ing: [
-        { q: "1 lata", i: "Atum ao natural", c: "proteina" },
-        { q: "\xBD lata", i: "Gr\xE3o-de-bico cozido", c: "mercearia" },
-        { q: "\xBD", i: "Cebola", c: "frescos" },
-        { q: "1", i: "Tomate", c: "frescos" },
-        { q: "1", i: "Ovos", c: "lacticinios" },
-        { q: "q.b.", i: "Salsa ou coentros", c: "frescos" },
-        { q: "1", i: "Lim\xE3o", c: "frescos" }
-      ],
-      steps: ["Cozer o ovo 10 min.", "Misturar atum escorrido, gr\xE3o passado por \xE1gua, cebola e tomate picados.", "Temperar com lim\xE3o, sal e salsa; juntar o ovo \xE0s rodelas."],
+      ing: [ing("1 lata", "Atum ao natural", "peixe"), ing("\xBD lata", "Gr\xE3o-de-bico cozido", "mercearia"), ing("\xBD", "Cebola", "frescos"), ing("1", "Tomate", "frescos"), ing("1", "Ovos", "lacticinios"), ing("q.b.", "Coentros", "frescos"), ing("1", "Lim\xE3o", "frescos")],
+      steps: ["Cozer o ovo 10 min.", "Misturar atum escorrido, gr\xE3o passado por \xE1gua, cebola e tomate picados.", "Temperar com lim\xE3o, sal e coentros; juntar o ovo \xE0s rodelas."],
       tip: "\xD3tima para levar para o trabalho."
-    },
-    {
-      id: "sopa",
-      name: "Sopa de legumes (sem natas)",
-      meal: "Entrada / jantar leve",
-      time: "30 min",
-      serves: 4,
-      ing: [
-        { q: "500 g", i: "Ab\xF3bora", c: "frescos" },
-        { q: "3", i: "Cenoura", c: "frescos" },
-        { q: "1", i: "Cebola", c: "frescos" },
-        { q: "2 dentes", i: "Alho", c: "frescos" },
-        { q: "1 pequena", i: "Batata", c: "frescos" },
-        { q: "3 folhas", i: "Couve", c: "frescos" }
-      ],
-      steps: ["Cozer tudo (menos a couve) em 1,5 L de \xE1gua com sal, 20 min.", "Triturar e juntar a couve cortada fina; ferver mais 5 min."],
-      tip: "Uma tigela antes do jantar ajuda a comer menos do resto."
     },
     {
       id: "muamba",
@@ -1147,33 +1121,41 @@
       meal: "Almo\xE7o de fim de semana",
       time: "60 min",
       serves: 4,
-      ing: [
-        { q: "800 g", i: "Frango sem pele", c: "proteina" },
-        { q: "300 g", i: "Quiabo", c: "frescos" },
-        { q: "400 g", i: "Ab\xF3bora", c: "frescos" },
-        { q: "2", i: "Cebola", c: "frescos" },
-        { q: "3", i: "Tomate", c: "frescos" },
-        { q: "4 dentes", i: "Alho", c: "frescos" },
-        { q: "q.b.", i: "Jindungo", c: "frescos" },
-        { q: "2 c. sopa", i: "\xD3leo de palma (dend\xE9m)", c: "mercearia" }
-      ],
+      ing: [ing("800 g", "Frango sem pele", "proteina"), ing("300 g", "Quiabo", "frescos"), ing("400 g", "Ab\xF3bora", "frescos"), ing("2", "Cebola", "frescos"), ing("3", "Tomate", "frescos"), ing("4 dentes", "Alho", "frescos"), ing("q.b.", "Jindungo", "frescos"), ing("2 c. sopa", "\xD3leo de palma (dend\xE9m)", "mercearia")],
       steps: ["Refogar cebola, alho e tomate no \xF3leo de palma.", "Juntar o frango e cozinhar 20 min com um pouco de \xE1gua.", "Juntar a ab\xF3bora e o quiabo e cozinhar mais 20 min."],
       tip: "Menos dend\xE9m do que o habitual e frango sem pele. Com funge: uma concha pequena."
     },
-    // --- Lanches ---
+    // --- Sopas ---
     {
-      id: "iogurte",
-      name: "Iogurte com fruta e aveia",
+      id: "sopa",
+      name: "Sopa de ab\xF3bora e legumes (sem batata)",
+      meal: "Entrada / jantar leve",
+      time: "30 min",
+      serves: 5,
+      ing: [ing("700 g", "Ab\xF3bora", "frescos"), ing("3", "Cenoura", "frescos"), ing("2", "Cebola", "frescos"), ing("3 dentes", "Alho", "frescos"), ing("1", "Courgette ou chuchu", "frescos"), ing("3 folhas", "Couve", "frescos")],
+      steps: ["Cozer tudo (menos a couve) em 1,5 L de \xE1gua com sal, 20 min. A ab\xF3bora espessa a sopa sem precisar de batata.", "Triturar e juntar a couve cortada fina; ferver mais 5 min.", "Um fio de azeite no fim, j\xE1 no prato."],
+      tip: "Fa\xE7a uma panela para 4\u20135 dias. Uma tigela antes do jantar ajuda a comer menos do resto."
+    },
+    {
+      id: "sopa-peixe",
+      name: "Sopa de peixe com ab\xF3bora",
+      meal: "Jantar",
+      time: "40 min",
+      serves: 4,
+      ing: [ing("500 g", "Pescada ou garoupa (com cabe\xE7a para o caldo)", "peixe"), ing("500 g", "Ab\xF3bora", "frescos"), ing("2", "Cenoura", "frescos"), ing("2", "Tomate", "frescos"), ing("1", "Cebola", "frescos"), ing("3 dentes", "Alho", "frescos"), ing("q.b.", "Coentros", "frescos")],
+      steps: ["Cozer o peixe em 1,5 L de \xE1gua com sal e cebola, 15 min. Retirar, limpar de peles e espinhas.", "No caldo, cozer ab\xF3bora, cenoura, tomate e alho 20 min e triturar.", "Juntar o peixe desfiado e os coentros."],
+      tip: "\xC9 um jantar completo e leve. Pode juntar camar\xE3o nos \xFAltimos 3 min."
+    },
+    // --- Lanches / petiscos ---
+    {
+      id: "fruta-amendoim",
+      name: "Fruta com amendoim",
       meal: "Lanche",
-      time: "3 min",
+      time: "2 min",
       serves: 1,
-      ing: [
-        { q: "1", i: "Iogurte natural", c: "lacticinios" },
-        { q: "1 pe\xE7a", i: "Fruta da \xE9poca (papaia, manga, ma\xE7\xE3)", c: "frescos" },
-        { q: "2 c. sopa", i: "Aveia", c: "mercearia" }
-      ],
-      steps: ["Juntar tudo numa ta\xE7a."],
-      tip: 'Iogurte natural sem a\xE7\xFAcar \u2014 os "de aromas" t\xEAm muito a\xE7\xFAcar.'
+      ing: [ing("1 pe\xE7a", "Fruta da \xE9poca (papaia, manga, ma\xE7\xE3, banana)", "frescos"), ing("1 m\xE3o pequena", "Amendoim torrado sem sal", "mercearia")],
+      steps: ["Uma pe\xE7a de fruta e uma m\xE3o pequena (cerca de 20 g) de amendoim."],
+      tip: "A gordura e a prote\xEDna do amendoim seguram a fome at\xE9 ao jantar."
     },
     {
       id: "batido",
@@ -1181,12 +1163,7 @@
       meal: "P\xF3s-treino",
       time: "5 min",
       serves: 1,
-      ing: [
-        { q: "1", i: "Banana", c: "frescos" },
-        { q: "250 ml", i: "Leite meio-gordo", c: "lacticinios" },
-        { q: "2 c. sopa", i: "Aveia", c: "mercearia" },
-        { q: "1 c. sopa", i: "Manteiga de amendoim", c: "mercearia" }
-      ],
+      ing: [ing("1", "Banana", "frescos"), ing("250 ml", "Leite meio-gordo", "lacticinios"), ing("2 c. sopa", "Aveia", "mercearia"), ing("1 c. sopa", "Manteiga de amendoim", "mercearia")],
       steps: ["Triturar tudo com gelo."],
       tip: "Bom depois da calistenia: prote\xEDna e hidratos para recuperar."
     },
@@ -1196,27 +1173,37 @@
       meal: "Lanche antes de sair do trabalho",
       time: "12 min",
       serves: 1,
-      ing: [
-        { q: "2", i: "Ovos", c: "lacticinios" },
-        { q: "1 pe\xE7a", i: "Ma\xE7\xE3 ou banana", c: "frescos" }
-      ],
+      ing: [ing("2", "Ovos", "lacticinios"), ing("1 pe\xE7a", "Ma\xE7\xE3 ou banana", "frescos")],
       steps: ["Cozer os ovos 10 min (pode cozer 6 de uma vez para a semana).", "Comer com uma pe\xE7a de fruta."],
-      tip: "Chegar a casa com fome \xE9 meio caminho para a cerveja e o petisco."
+      tip: "Chegar a casa com fome \xE9 meio caminho para o petisco."
+    },
+    {
+      id: "petisco-tv",
+      name: "Petiscos para a TV",
+      meal: "Petisco da noite",
+      time: "5 min",
+      serves: 1,
+      ing: [ing("1", "Pepino", "frescos"), ing("2", "Cenoura", "frescos"), ing("100 g", "Camar\xE3o cozido", "peixe"), ing("1", "Lim\xE3o", "frescos"), ing("q.b.", "Tremo\xE7os", "mercearia")],
+      steps: ["Palitos de pepino e cenoura com lim\xE3o e sal.", "Camar\xE3o cozido frio ou uma ta\xE7a de tremo\xE7os."],
+      tip: "Trocar batatas fritas e amendoins salgados por isto corta muitas calorias da noite."
     }
   ];
   var CAT_NAMES = {
     frescos: "Frescos (fruta e legumes)",
-    proteina: "Peixe e carne",
+    peixe: "Peixe e marisco",
+    proteina: "Carne",
     lacticinios: "Ovos e lactic\xEDnios",
     mercearia: "Mercearia"
   };
-  var BEER_TIPS = [
-    "Beba primeiro 500 ml de \xE1gua ou infus\xE3o gelada. Muitas vezes \xE9 sede, n\xE3o vontade de cerveja.",
-    "Coma algo antes (ovos, fruta, ginguba): de est\xF4mago vazio bebe-se mais e mais depressa.",
-    "Alterne: cerveja, \xE1gua, cerveja.",
-    "Escolha dias sem cerveja na semana (ex.: segunda a quinta) em vez de cortar tudo de uma vez.",
-    "Garrafa pequena em vez de grande. Cerveja sem \xE1lcool tamb\xE9m conta como boa troca.",
-    "Cada cerveja de 330 ml tem cerca de 140 kcal \u2014 4 por dia s\xE3o quase uma refei\xE7\xE3o extra."
+  var ALC_TIPS = [
+    "Antes do primeiro copo, um copo grande de \xE1gua. Muitas vezes \xE9 sede.",
+    "Vinho: copo de 150 ml, n\xE3o cheio at\xE9 cima. Sirva e guarde a garrafa.",
+    "Dias sem \xE1lcool durante a semana (ex.: segunda a quinta) valem mais do que cortar um pouco todos os dias.",
+    "Alterne: uma bebida, um copo de \xE1gua.",
+    "Uma cerveja de 330 ml \u2248 140 kcal; um copo de vinho de 150 ml \u2248 120 kcal; um destilado com \xE1gua ou soda \u2248 100 kcal.",
+    "O \xE1lcool \xE0 noite piora o sono \u2014 e dormir mal aumenta a fome no dia seguinte.",
+    "Cuidado com o petisco: com \xE1lcool come-se mais sem dar conta.",
+    'Cerveja sem \xE1lcool ou \xE1gua com g\xE1s e lim\xE3o tamb\xE9m "fazem companhia" \xE0 TV.'
   ];
 
   // src/anims.js
@@ -1544,7 +1531,7 @@
     { id: "treino", name: "Treinos", description: "Lembretes de treino" },
     { id: "agua", name: "\xC1gua", description: "Lembretes para beber \xE1gua" },
     { id: "peso", name: "Peso e cintura", description: "Registo de peso e cintura" },
-    { id: "cerveja", name: "Fim do trabalho", description: "Troca da primeira cerveja" },
+    { id: "cerveja", name: "Antes de beber", description: "\xC1gua antes da primeira bebida" },
     { id: "chas", name: "Ch\xE1s e infus\xF5es", description: "Sugest\xF5es de ch\xE1s" }
   ];
   var parseT = (t) => {
@@ -1652,8 +1639,8 @@
         const t = parseT(d === 6 ? s.cervejaSabado : s.cervejaHora);
         list.push({
           id: 4e3 + d,
-          title: "\u{1F37A} Antes da cerveja\u2026",
-          body: "500 ml de \xE1gua ou infus\xE3o gelada primeiro. Depois decide.",
+          title: "\u{1F377} Antes de beber\u2026",
+          body: "Primeiro 500 ml de \xE1gua ou infus\xE3o fresca. Depois decide.",
           channelId: "cerveja",
           extra: { kind: "cerveja" },
           schedule: { ...base, on: { weekday: d + 1, hour: t.h, minute: t.m } }
@@ -1740,6 +1727,11 @@
     metaPeso: ""
   };
   var clone = (o) => JSON.parse(JSON.stringify(o));
+  function migrateBeer(b) {
+    const o = {};
+    for (const [k, v] of Object.entries(b)) if (v) o[k] = { c: v };
+    return o;
+  }
   function load() {
     let s = null;
     try {
@@ -1753,7 +1745,7 @@
       water: s.water || {},
       weight: s.weight || {},
       waist: s.waist || {},
-      beer: s.beer || {},
+      alc: s.alc || migrateBeer(s.beer || {}),
       log: s.log || {},
       shop: s.shop || { sel: [], checked: {} }
     };
@@ -1808,9 +1800,13 @@
     state.water[k] = Math.max(0, (state.water[k] || 0) + ml);
     save();
   }
+  var alcDay = (k) => {
+    const a = state.alc[k] || {};
+    return (a.c || 0) + (a.v || 0) + (a.o || 0);
+  };
   function beerWeek(monday = mondayOf()) {
     let t = 0;
-    for (let i = 0; i < 7; i++) t += state.beer[dkey(addDays(monday, i))] || 0;
+    for (let i = 0; i < 7; i++) t += alcDay(dkey(addDays(monday, i)));
     return t;
   }
   function slotLog(k, slot) {
@@ -1948,8 +1944,9 @@
     const monday = dkey(mondayOf());
     const waistThisWeek = sortedKeys(state.waist).filter((x) => x >= monday);
     const showWaist = now.getDay() === Number(s.cinturaDia) || !waistThisWeek.length;
-    const bw = beerWeek(), bt = state.beer[k] || 0;
-    const tip = BEER_TIPS[now.getDate() % BEER_TIPS.length];
+    const bw = beerWeek(), at = state.alc[k] || {};
+    const tip = ALC_TIPS[now.getDate() % ALC_TIPS.length];
+    const alcRow = (t, ic, l) => `<div class="alc-r"><span>${ic} ${l}</span><button class="btn sm ghost" data-alc="${t}|-1">\u2212</button><b>${at[t] || 0}</b><button class="btn sm" data-alc="${t}|1">+</button></div>`;
     const tea = hr < 12 ? TEAS[0] : hr < 16 ? TEAS[6] : hr < 19 ? TEAS[10] : TEAS[hr < 21 ? 5 : 4];
     const st = streak();
     return `<header><div><h1>${greet}, ${s.nome}</h1><div class="muted">${DAY_NAMES[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]}</div></div>
@@ -1966,8 +1963,8 @@
       ${showWaist ? `<h3>\u{1F4CF} Cintura (semanal)</h3><div class="row"><input id="inCintura" type="number" inputmode="decimal" step="0.5" placeholder="cm" value="${(_a = state.waist[k]) != null ? _a : ""}"><button class="btn sm" data-act="saveCintura">Guardar</button></div>
       <p class="muted small">\xC0 altura do umbigo, barriga relaxada, a expirar.</p>` : ""}
     </section>
-    <section class="card"><h2>\u{1F37A} Cerveja <span class="right ${bw > s.metaCerveja ? "bad" : ""}">${bw} / ${s.metaCerveja} esta semana</span></h2>
-      <div class="row"><button class="btn sm ghost" data-beer="-1">\u22121</button><div class="big">${bt} hoje</div><button class="btn sm" data-beer="1">+1</button></div>
+    <section class="card"><h2>\u{1F377} \xC1lcool <span class="right ${bw > s.metaCerveja ? "bad" : ""}">${bw} / ${s.metaCerveja} bebidas esta semana</span></h2>
+      ${alcRow("c", "\u{1F37A}", "Cerveja (330 ml)")}${alcRow("v", "\u{1F377}", "Vinho (copo 150 ml)")}${alcRow("o", "\u{1F943}", "Destilado (dose 40 ml)")}
       <p class="muted small">\u{1F4A1} ${tip}</p></section>
     <section class="card tea"><h2>\u{1F375} Sugest\xE3o para agora</h2><b>${tea.name}</b><p class="small">${tea.good}</p><p class="muted small">${tea.how}</p></section>`;
   }
@@ -2053,7 +2050,7 @@
     ${ck.length ? `<details><summary>Registos</summary>${ck.slice().reverse().map((k) => `<div class="hist"><span>${fmtShort(k)}</span><span>${num(state.waist[k])} cm <button class="link" data-del="waist|${k}">apagar</button></span></div>`).join("")}</details>` : ""}
   </section>
   <section class="card"><h2>\u{1F4A7} \xC1gua \u2014 \xFAltimos 7 dias (L)</h2>${barChart(waterBars, { goal: s.metaAgua / 1e3 })}</section>
-  <section class="card"><h2>\u{1F37A} Cerveja por semana</h2>${barChart(beerBars, { goal: s.metaCerveja })}<p class="muted small">A linha \xE9 a sua meta semanal (${s.metaCerveja}).</p></section>`;
+  <section class="card"><h2>\u{1F377} Bebidas alco\xF3licas por semana</h2>${barChart(beerBars, { goal: s.metaCerveja })}<p class="muted small">A linha \xE9 a sua meta semanal (${s.metaCerveja}).</p></section>`;
   }
   function vNutri() {
     const sub = { chas: "Ch\xE1s", receitas: "Receitas", compras: "Compras" };
@@ -2072,10 +2069,10 @@
       for (const id of state.shop.sel) {
         const r = RECIPES.find((x) => x.id === id);
         if (!r) continue;
-        for (const ing of r.ing) {
-          agg[ing.c] = agg[ing.c] || {};
-          agg[ing.c][ing.i] = agg[ing.c][ing.i] || [];
-          agg[ing.c][ing.i].push(ing.q);
+        for (const ing2 of r.ing) {
+          agg[ing2.c] = agg[ing2.c] || {};
+          agg[ing2.c][ing2.i] = agg[ing2.c][ing2.i] || [];
+          agg[ing2.c][ing2.i].push(ing2.q);
         }
       }
       const cats = Object.keys(CAT_NAMES).filter((c) => agg[c]);
@@ -2101,11 +2098,11 @@
     <label class="fld"><span>Intervalo</span><select data-set="aguaIntervalo">${[45, 60, 90, 120].map((v) => `<option value="${v}" ${s.aguaIntervalo == v ? "selected" : ""}>${v} min</option>`).join("")}</select></label>
     ${tg("notifPeso", "\u2696\uFE0F Peso di\xE1rio + cintura semanal")}${tm("pesoHora", "Hora da pesagem")}
     <label class="fld"><span>Dia da cintura</span><select data-set="cinturaDia">${DAY_NAMES.map((d, i) => `<option value="${i}" ${s.cinturaDia == i ? "selected" : ""}>${d}</option>`).join("")}</select></label>
-    ${tg("notifCerveja", "\u{1F37A} Lembrete antes da cerveja")}${tm("cervejaHora", "Seg\u2013Sex")}${tm("cervejaSabado", "S\xE1bado")}
+    ${tg("notifCerveja", "\u{1F377} Lembrete antes de beber")}${tm("cervejaHora", "Seg\u2013Sex")}${tm("cervejaSabado", "S\xE1bado")}
     ${tg("notifChas", "\u{1F375} Ch\xE1s")}${tm("chaManha", "Ch\xE1 da manh\xE3")}${tm("chaNoite", "Infus\xE3o da noite")}
     <p class="muted small">${lastSched ? lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? " (pr\xE9-visualiza\xE7\xE3o web)" : ""}${lastSched.warning ? " \u2014 sem permiss\xE3o de alarme exato, podem atrasar" : ""}.` : ""}</p>
     <button class="btn" data-act="test">Enviar notifica\xE7\xE3o de teste (5 s)</button></section>
-  <section class="card"><h2>Metas</h2>${nm("metaAgua", "\xC1gua por dia (ml)", 250)}${nm("copoMl", "Tamanho do copo (ml)", 50)}${nm("metaCerveja", "Cervejas por semana (m\xE1x.)")}${nm("metaPeso", "Peso objetivo (kg)", 0.5)}
+  <section class="card"><h2>Metas</h2>${nm("metaAgua", "\xC1gua por dia (ml)", 250)}${nm("copoMl", "Tamanho do copo (ml)", 50)}${nm("metaCerveja", "Bebidas alco\xF3licas por semana (m\xE1x.)")}${nm("metaPeso", "Peso objetivo (kg)", 0.5)}
     <p class="muted small">\xC1gua: cerca de 35 ml por kg de peso. No Lubango (altitude, ar seco) e nos dias de treino, 3 L \xE9 um bom alvo.</p></section>
   <section class="card"><h2>\u231A Huawei Watch GT 6</h2><ol class="small">
     <li>Na app <b>Huawei Health</b> \u2192 Dispositivos \u2192 GT 6 \u2192 <b>Notifica\xE7\xF5es</b>: ative e ligue o <b>KillBelly</b>.</li>
@@ -2121,7 +2118,7 @@
   <p class="muted small center">KillBelly \xB7 os dados ficam s\xF3 no seu telem\xF3vel.</p>`;
   }
   app.addEventListener("click", async (e) => {
-    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-beer],[data-act],[data-nutri],[data-shop],[data-del]");
+    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del]");
     if (!t) return;
     const d = t.dataset;
     if (d.tab) {
@@ -2153,9 +2150,10 @@
       render();
       return;
     }
-    if (d.beer) {
-      const k = dkey();
-      state.beer[k] = Math.max(0, (state.beer[k] || 0) + Number(d.beer));
+    if (d.alc) {
+      const [ty, n] = d.alc.split("|"), k = dkey();
+      state.alc[k] = state.alc[k] || {};
+      state.alc[k][ty] = Math.max(0, (state.alc[k][ty] || 0) + Number(n));
       save();
       render();
       return;
