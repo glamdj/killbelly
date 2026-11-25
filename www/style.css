@@ -65,3 +65,7 @@ body.coaching main{padding-bottom:340px}
 .upd{background:#efe6ff;color:#3d2a7a;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;font-weight:600}
 .hist span:first-child{white-space:nowrap}.hist span:last-child{text-align:right}
 .seg2{background:#eef3f0}.seg2 button{padding:7px;font-size:13px}.meal-h{margin:14px 2px 6px;font-size:15px}.snk{padding:8px 0;border-top:1px solid var(--line)}.snk:first-of-type{border-top:0}
+.hdr-r{display:flex;align-items:center;gap:8px}.bell{position:relative;background:#fff;border:0;border-radius:999px;width:40px;height:40px;font-size:19px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.badge{position:absolute;top:-3px;right:-3px;background:var(--bad);color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;padding:0 4px}
+.nt-card{padding:4px 14px}.nt{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.nt:first-child{border-top:0}.nt-t{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px;min-width:44px;padding-top:2px}
+.nt-b{flex:1}.nt.new .nt-b b::before{content:'● ';color:var(--acc)}.nt-a{margin-top:6px}

@@ -2664,18 +2664,19 @@
     d.setHours(h, m, 0, 0);
     return d;
   };
-  function buildNotifications(state2, from = /* @__PURE__ */ new Date()) {
+  function buildNotifications(state2, from = /* @__PURE__ */ new Date(), { startDay = null, days = DAYS_AHEAD, all = false } = {}) {
     const list = [];
     const now = from.getTime();
-    const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-    for (let di = 0; di < DAYS_AHEAD; di++) {
+    const sd = startDay || from;
+    const start = new Date(sd.getFullYear(), sd.getMonth(), sd.getDate());
+    for (let di = 0; di < days; di++) {
       const day = new Date(start);
       day.setDate(start.getDate() + di);
       const { vac, week, s } = profile(state2, day);
       const wd = day.getDay();
       const base = 1e4 + di * 100;
       const push = (n) => {
-        if (n.schedule.at.getTime() > now + 3e4) list.push({ ...n, schedule: { ...n.schedule, allowWhileIdle: true } });
+        if (all || n.schedule.at.getTime() > now + 3e4) list.push({ ...n, schedule: { ...n.schedule, allowWhileIdle: true } });
       };
       if (s.notifTreino) {
         for (const slot of ["am", "pm"]) {
@@ -2738,6 +2739,7 @@
         push({ id: base + 31, title: "\u{1F33F} Infus\xE3o da noite", body: "Camomila, erva-pr\xEDncipe ou funcho. Ajuda a dormir e a desinchar.", channelId: "chas", extra: { kind: "cha" }, schedule: { at: at(day, s.chaNoite) } });
       }
     }
+    if (all) return list;
     const renew = new Date(start);
     renew.setDate(start.getDate() + DAYS_AHEAD - 2);
     renew.setHours(12, 0, 0, 0);
@@ -2776,6 +2778,15 @@
   function onAction(handler) {
     if (!isNative()) return;
     LocalNotifications.addListener("localNotificationActionPerformed", handler);
+  }
+  function notificationFeed(state2, now = /* @__PURE__ */ new Date()) {
+    const y = new Date(now);
+    y.setDate(now.getDate() - 1);
+    const all = buildNotifications(state2, now, { startDay: y, days: 3, all: true }).map((n) => ({ id: n.id, title: n.title, body: n.body, at: n.schedule.at, kind: n.extra && n.extra.kind || "", slot: n.extra && n.extra.slot })).sort((a, b) => a.at - b.at);
+    const t = now.getTime();
+    const past = all.filter((n) => n.at.getTime() <= t && n.at.getTime() > t - 48 * 36e5).reverse();
+    const next = all.filter((n) => n.at.getTime() > t).slice(0, 6);
+    return { past, next };
   }
 
   // src/app.js
@@ -3005,7 +3016,7 @@
     ["def", "\u2699\uFE0F", "Defini\xE7\xF5es"]
   ];
   function render() {
-    const views = { hoje: vHoje, treino: vTreino, prog: vProg, nutri: vNutri, def: vDef };
+    const views = { notifs: vNotifs, hoje: vHoje, treino: vTreino, prog: vProg, nutri: vNutri, def: vDef };
     app.innerHTML = `<main>${views[tab]()}</main>
   <nav>${TABS.map(([id, ic, l]) => `<button data-tab="${id}" class="${tab === id ? "on" : ""}"><span>${ic}</span>${l}</button>`).join("")}</nav>`;
   }
@@ -3104,7 +3115,7 @@
     const tea = hr < 12 ? TEAS[0] : hr < 16 ? TEAS[6] : hr < 19 ? TEAS[10] : TEAS[hr < 21 ? 5 : 4];
     const st = streak();
     return `<header><div><h1>${greet}, ${s.nome}</h1><div class="muted">${DAY_NAMES[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]}</div></div>
-    <div class="streak" title="Dias seguidos com treino">\u{1F525} ${st}</div></header>
+    <div class="hdr-r"><button class="bell" data-tab="notifs" aria-label="Notifica\xE7\xF5es">\u{1F514}${unreadCount() ? `<span class="badge">${unreadCount()}</span>` : ""}</button><div class="streak" title="Dias seguidos com treino">\u{1F525} ${st}</div></div></header>
     ${banners()}${pr.vac ? `<div class="vac">\u{1F3D6}\uFE0F Modo f\xE9rias${s.feriasModo === "auto" && s.feriasFim ? ` at\xE9 ${fmtShort(s.feriasFim)}` : ""} \u2014 durma bem, o treino \xE9 ao fim da manh\xE3.</div>` : ""}
     <section class="card"><h2>\u{1F4A7} \xC1gua <span class="right">${num(w / 1e3, 2)} / ${num(s.metaAgua / 1e3, 1)} L</span></h2>
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
@@ -3308,6 +3319,57 @@
       }).join("")}</section>`).join("") + `<button class="btn ghost" data-act="clearShop">Limpar lista</button>`;
     }
     return `<header><h1>Nutri\xE7\xE3o</h1></header><div class="seg">${Object.entries(sub).map(([id, l]) => `<button data-nutri="${id}" class="${nutriTab === id ? "on" : ""}">${l}${id === "compras" && state.shop.sel.length ? ` (${state.shop.sel.length})` : ""}</button>`).join("")}</div>${body}`;
+  }
+  function unreadCount() {
+    const seen = Number(localStorage.getItem("kb.notifSeen") || 0);
+    const { past } = notificationFeed(state);
+    const items = past.filter((n) => n.at.getTime() > seen && n.kind !== "agua");
+    const water = past.some((n) => n.at.getTime() > seen && n.kind === "agua") ? 1 : 0;
+    return Math.min(99, items.length + water);
+  }
+  var hm = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  function notifAction(n) {
+    if (n.kind === "agua") return `<button class="btn sm" data-water="${state.settings.copoMl}">+ ${state.settings.copoMl} ml</button>`;
+    if (n.kind === "treino") return `<button class="btn sm ghost" data-goto="hoje">Ver treino</button>`;
+    if (n.kind === "snack") return `<button class="btn sm ghost" data-goto="menu">Ver menu</button>`;
+    if (n.kind === "peso" || n.kind === "cintura") return `<button class="btn sm ghost" data-goto="hoje">Registar</button>`;
+    if (n.kind === "cerveja") return `<button class="btn sm ghost" data-goto="hoje">Contador</button>`;
+    if (n.kind === "cha") return `<button class="btn sm ghost" data-goto="chas">Ver ch\xE1s</button>`;
+    return "";
+  }
+  function vNotifs() {
+    const now = /* @__PURE__ */ new Date(), seen = Number(localStorage.getItem("kb.notifSeen") || 0);
+    const { past, next } = notificationFeed(state, now);
+    try {
+      localStorage.setItem("kb.notifSeen", String(now.getTime()));
+    } catch {
+    }
+    const today = dkey2(now);
+    const rows = [];
+    const waterDone = {};
+    for (const n of past) {
+      const k = dkey2(n.at);
+      if (n.kind === "agua") {
+        if (waterDone[k]) {
+          waterDone[k].count++;
+          continue;
+        }
+        waterDone[k] = { ...n, count: 1 };
+        rows.push(waterDone[k]);
+        continue;
+      }
+      rows.push(n);
+    }
+    const row = (n) => `<div class="nt ${n.at.getTime() > seen ? "new" : ""}"><div class="nt-t">${hm(n.at)}</div><div class="nt-b"><b>${n.title}</b>
+    <div class="small">${n.kind === "agua" ? `${n.count} lembrete${n.count > 1 ? "s" : ""} de \xE1gua \xB7 bebeu ${num((state.water[dkey2(n.at)] || 0) / 1e3, 2)} L` : n.body}</div>
+    ${dkey2(n.at) === today ? `<div class="row nt-a">${notifAction(n)}</div>` : ""}</div></div>`;
+    const group = (label, list) => list.length ? `<h3 class="meal-h">${label}</h3><section class="card nt-card">${list.map(row).join("")}</section>` : "";
+    return `<header><h1>Notifica\xE7\xF5es</h1><button class="btn sm ghost" data-tab="hoje">Fechar</button></header>
+    ${group("Hoje", rows.filter((n) => dkey2(n.at) === today))}
+    ${group("Ontem", rows.filter((n) => dkey2(n.at) !== today))}
+    ${!rows.length ? '<p class="muted">Ainda n\xE3o h\xE1 notifica\xE7\xF5es nas \xFAltimas 48 horas.</p>' : ""}
+    <h3 class="meal-h">\u23ED\uFE0F Pr\xF3ximos lembretes</h3><section class="card nt-card">${next.map((n) => `<div class="nt"><div class="nt-t">${dkey2(n.at) === today ? "" : "amanh\xE3 "}${hm(n.at)}</div><div class="nt-b"><b>${n.title}</b><div class="small muted">${n.body}</div></div></div>`).join("") || '<p class="muted small">Sem lembretes agendados.</p>'}</section>
+    <p class="muted small">O hist\xF3rico mostra os lembretes das \xFAltimas 48 horas, de acordo com os hor\xE1rios atuais.</p>`;
   }
   function vDef() {
     const s = state.settings;
@@ -3516,7 +3578,7 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     });
   }
   app.addEventListener("click", async (e) => {
-    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided],[data-swap],[data-shopday],[data-menuday],[data-rectab]");
+    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided],[data-swap],[data-shopday],[data-menuday],[data-rectab],[data-goto]");
     if (!t) return;
     const d = t.dataset;
     if (d.tab) {
@@ -3564,6 +3626,16 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     if (d.plan) {
       planEdit = d.plan;
       render();
+      return;
+    }
+    if (d.goto) {
+      if (d.goto === "menu" || d.goto === "chas") {
+        tab = "nutri";
+        nutriTab = d.goto;
+        menuDay = null;
+      } else tab = d.goto;
+      render();
+      window.scrollTo(0, 0);
       return;
     }
     if (d.swap) {

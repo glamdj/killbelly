@@ -95,16 +95,17 @@ const at = (date, t) => { const { h, m } = parseT(t); const d = new Date(date); 
 
 // Notificações únicas ("at") para os próximos 14 dias, cada dia com o seu perfil.
 // São recalculadas sempre que a app abre, por isso a mudança para férias é automática.
-export function buildNotifications(state, from = new Date()) {
+export function buildNotifications(state, from = new Date(), { startDay = null, days = DAYS_AHEAD, all = false } = {}) {
   const list = [];
   const now = from.getTime();
-  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-  for (let di = 0; di < DAYS_AHEAD; di++) {
+  const sd = startDay || from;
+  const start = new Date(sd.getFullYear(), sd.getMonth(), sd.getDate());
+  for (let di = 0; di < days; di++) {
     const day = new Date(start); day.setDate(start.getDate() + di);
     const { vac, week, s } = profile(state, day);
     const wd = day.getDay();
     const base = 10000 + di * 100;
-    const push = (n) => { if (n.schedule.at.getTime() > now + 30000) list.push({ ...n, schedule: { ...n.schedule, allowWhileIdle: true } }); };
+    const push = (n) => { if (all || n.schedule.at.getTime() > now + 30000) list.push({ ...n, schedule: { ...n.schedule, allowWhileIdle: true } }); };
 
     if (s.notifTreino) {
       for (const slot of ['am', 'pm']) {
@@ -161,6 +162,7 @@ export function buildNotifications(state, from = new Date()) {
       push({ id: base + 31, title: '🌿 Infusão da noite', body: 'Camomila, erva-príncipe ou funcho. Ajuda a dormir e a desinchar.', channelId: 'chas', extra: { kind: 'cha' }, schedule: { at: at(day, s.chaNoite) } });
     }
   }
+  if (all) return list;
   // Aviso de segurança caso a app não seja aberta durante quase 2 semanas
   const renew = new Date(start); renew.setDate(start.getDate() + DAYS_AHEAD - 2); renew.setHours(12, 0, 0, 0);
   list.push({ id: 9000, title: '🔄 KillBelly', body: 'Abra a app para renovar os lembretes das próximas semanas.', channelId: 'treino', schedule: { at: renew, allowWhileIdle: true } });
@@ -201,4 +203,16 @@ export async function testNotification() {
 export function onAction(handler) {
   if (!isNative()) return;
   LocalNotifications.addListener('localNotificationActionPerformed', handler);
+}
+
+// Histórico (últimas 48 h) e próximos lembretes, reconstruídos a partir do horário
+export function notificationFeed(state, now = new Date()) {
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  const all = buildNotifications(state, now, { startDay: y, days: 3, all: true })
+    .map((n) => ({ id: n.id, title: n.title, body: n.body, at: n.schedule.at, kind: (n.extra && n.extra.kind) || '', slot: n.extra && n.extra.slot }))
+    .sort((a, b) => a.at - b.at);
+  const t = now.getTime();
+  const past = all.filter((n) => n.at.getTime() <= t && n.at.getTime() > t - 48 * 3600e3).reverse();
+  const next = all.filter((n) => n.at.getTime() > t).slice(0, 6);
+  return { past, next };
 }
