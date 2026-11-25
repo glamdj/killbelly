@@ -1,0 +1,11 @@
+{
+  "appId": "ao.luissilva.killbelly",
+  "appName": "KillBelly",
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_killbelly",
+      "iconColor": "#14855C"
+    }
+  }
+}

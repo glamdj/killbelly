@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KillBelly</string>
+    <string name="title_activity_main">KillBelly</string>
+    <string name="package_name">ao.luissilva.killbelly</string>
+    <string name="custom_url_scheme">ao.luissilva.killbelly</string>
+</resources>
