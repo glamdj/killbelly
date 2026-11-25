@@ -1,7 +1,8 @@
 import { DEFAULT_WEEK_FERIAS, SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, ALC_TIPS, SNACKS } from './data.js';
 import { animFor, ANIMS, startAnimLoop } from './anims.js';
 import { run as coachRun, say, setVoice } from './coach.js';
-import { status as upd, appReady, checkUpdates, applyNow, openApk } from './updater.js';
+import { status as upd, appReady, checkUpdates, applyNow, openApk, justUpdated } from './updater.js';
+let updatedInfo = justUpdated();
 import { profile, isVacation, snacksFor, setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
 
 // ---------- Estado ----------
@@ -220,6 +221,7 @@ function sessionCard(k, slot, cfg, editable = true) {
 
 function banners() {
   let b = '';
+  if (updatedInfo) b += `<div class="upd">✅ App atualizada (conteúdo ${updatedInfo.web})${updatedInfo.notes ? `: ${updatedInfo.notes}` : ''}. <button class="link" data-act="okUpd">OK</button></div>`;
   if (upd.apkUrl) b += `<div class="upd">⬆️ Nova versão da app disponível${upd.latest && upd.latest.notes ? `: ${upd.latest.notes}` : ''}. <button class="link" data-act="apk">Descarregar e instalar</button></div>`;
   else if (upd.pending) b += `<div class="upd">✨ Atualização pronta${upd.pending.notes ? `: ${upd.pending.notes}` : ''}. <button class="link" data-act="applyUpd">Aplicar agora</button></div>`;
   if (isNative() && !notifOk) b += `<div class="warn">As notificações estão desligadas. <button class="link" data-act="perm">Ativar</button></div>`;
@@ -660,6 +662,7 @@ app.addEventListener('click', async (e) => {
     case 'clearShop': state.shop = { sel: [], checked: {} }; save(); render(); break;
     case 'resetPlan': if (confirm('Repor o plano original?')) { if (planEdit === 'ferias') state.weekFerias = clone(DEFAULT_WEEK_FERIAS); else state.week = clone(DEFAULT_WEEK); save(true); render(); } break;
     case 'test': await testNotification(); break;
+    case 'okUpd': updatedInfo = null; render(); break;
     case 'apk': openApk(); break;
     case 'applyUpd': await applyNow(); break;
     case 'checkUpd': { const b0 = t; b0.textContent = 'A verificar…'; await checkUpdates({ manual: true }); render(); break; }

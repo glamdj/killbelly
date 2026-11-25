@@ -7,6 +7,16 @@ import { NATIVE, WEB } from './version.js';
 const BASE = 'https://raw.githubusercontent.com/glamdj/killbelly-updates/main/';
 export const status = { native: NATIVE, web: WEB, latest: null, apkUrl: null, pending: null, checking: false, error: null, lastCheck: 0 };
 
+// Depois de uma atualização: devolve o que mudou (uma vez)
+export function justUpdated() {
+  try {
+    const seen = Number(localStorage.getItem('kb.webSeen') || 0);
+    localStorage.setItem('kb.webSeen', String(WEB));
+    if (seen && WEB > seen) return { web: WEB, notes: localStorage.getItem('kb.notes.' + WEB) || '' };
+  } catch {}
+  return null;
+}
+
 export async function appReady() {
   if (!Capacitor.isNativePlatform()) return;
   try { await CapacitorUpdater.notifyAppReady(); } catch {}
@@ -35,6 +45,7 @@ export async function checkUpdates({ manual = false } = {}) {
       const b = await CapacitorUpdater.download({ url: BASE + L.zip, version: String(L.web), checksum: L.sha256 });
       await CapacitorUpdater.next({ id: b.id });
       status.pending = { id: b.id, web: L.web, notes: L.notes };
+      try { localStorage.setItem('kb.notes.' + L.web, L.notes || ''); } catch {}
     }
   } catch (e) { status.error = String(e.message || e); }
   status.checking = false;

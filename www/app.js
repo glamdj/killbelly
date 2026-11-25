@@ -2513,6 +2513,15 @@
   // src/updater.js
   var BASE = "https://raw.githubusercontent.com/glamdj/killbelly-updates/main/";
   var status = { native: NATIVE, web: WEB, latest: null, apkUrl: null, pending: null, checking: false, error: null, lastCheck: 0 };
+  function justUpdated() {
+    try {
+      const seen = Number(localStorage.getItem("kb.webSeen") || 0);
+      localStorage.setItem("kb.webSeen", String(WEB));
+      if (seen && WEB > seen) return { web: WEB, notes: localStorage.getItem("kb.notes." + WEB) || "" };
+    } catch {
+    }
+    return null;
+  }
   async function appReady() {
     if (!Capacitor.isNativePlatform()) return;
     try {
@@ -2549,6 +2558,10 @@
         const b = await CapacitorUpdater.download({ url: BASE + L2.zip, version: String(L2.web), checksum: L2.sha256 });
         await CapacitorUpdater.next({ id: b.id });
         status.pending = { id: b.id, web: L2.web, notes: L2.notes };
+        try {
+          localStorage.setItem("kb.notes." + L2.web, L2.notes || "");
+        } catch {
+        }
       }
     } catch (e) {
       status.error = String(e.message || e);
@@ -2766,6 +2779,7 @@
   }
 
   // src/app.js
+  var updatedInfo = justUpdated();
   var KEY = "killbelly.v1";
   var DEFAULT_SETTINGS = {
     nome: "Lu\xEDs",
@@ -3063,6 +3077,7 @@
   }
   function banners() {
     let b = "";
+    if (updatedInfo) b += `<div class="upd">\u2705 App atualizada (conte\xFAdo ${updatedInfo.web})${updatedInfo.notes ? `: ${updatedInfo.notes}` : ""}. <button class="link" data-act="okUpd">OK</button></div>`;
     if (status.apkUrl) b += `<div class="upd">\u2B06\uFE0F Nova vers\xE3o da app dispon\xEDvel${status.latest && status.latest.notes ? `: ${status.latest.notes}` : ""}. <button class="link" data-act="apk">Descarregar e instalar</button></div>`;
     else if (status.pending) b += `<div class="upd">\u2728 Atualiza\xE7\xE3o pronta${status.pending.notes ? `: ${status.pending.notes}` : ""}. <button class="link" data-act="applyUpd">Aplicar agora</button></div>`;
     if (isNative() && !notifOk) b += `<div class="warn">As notifica\xE7\xF5es est\xE3o desligadas. <button class="link" data-act="perm">Ativar</button></div>`;
@@ -3631,6 +3646,10 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
         break;
       case "test":
         await testNotification();
+        break;
+      case "okUpd":
+        updatedInfo = null;
+        render();
         break;
       case "apk":
         openApk();
