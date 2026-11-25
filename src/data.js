@@ -5,8 +5,8 @@ export const SESSIONS = {
     title: 'Calistenia A — parte superior + core',
     place: 'Circuito do condomínio',
     dur: '40–45 min',
-    note: 'Aquecimento de 5–8 min primeiro. Descanso de 60–90 s entre séries.',
-    rest: 75,
+    note: 'Aquecimento de 5–8 min primeiro. Pausas por tipo de exercício (ajustáveis em Definições). Experimente o modo pares.',
+    pairs: [[1, 3], [2, 4], [5, 7], [6]],
     items: [
       'Aquecimento: marcha rápida 3 min, círculos de braços, rotações de anca, 10 agachamentos, 20 s suspenso na barra',
       'Remada australiana na barra baixa — 3 × 8–12',
@@ -22,8 +22,8 @@ export const SESSIONS = {
     title: 'Calistenia B — pernas + core',
     place: 'Circuito do condomínio',
     dur: '45–50 min',
-    note: 'Descanso de 60 s entre séries.',
-    rest: 60,
+    note: 'Pausas por tipo de exercício (ajustáveis em Definições). Experimente o modo pares.',
+    pairs: [[1, 6], [2, 7], [3, 5], [4]],
     items: [
       'Aquecimento: marcha rápida 3 min, rotações de anca e tornozelos, 10 agachamentos',
       'Agachamento goblet com haltere 3 kg — 3 × 15',
@@ -59,7 +59,7 @@ export const SESSIONS = {
     place: 'Casa',
     dur: '15 min',
     note: 'Na roda, ir só até onde consegue manter a lombar direita.',
-    rest: 45,
+    pairs: [[0, 1], [2, 3], [4]],
     items: [
       'Roda de abdominais, de joelhos — 3 × 6–10',
       'Russian twist com haltere 3 kg — 3 × 20',
@@ -116,8 +116,8 @@ export const SESSIONS = {
     title: 'Corpo inteiro em casa (sem material)',
     place: 'Casa / parque',
     dur: '35–40 min',
-    note: 'Sem equipamento. 3 séries de cada exercício, 45–60 s de descanso entre séries. Uma cadeira firme chega.',
-    rest: 50,
+    note: 'Sem equipamento. 3 séries de cada exercício; ideal em modo pares. Uma cadeira firme chega.',
+    pairs: [[2, 1], [4, 3], [5, 6], [7]],
     items: [
       'Aquecimento: marcha no lugar 3 min, círculos de braços, 10 agachamentos',
       'Agachamento — 3 × 15–20',
@@ -134,7 +134,7 @@ export const SESSIONS = {
     place: 'Casa',
     dur: '15 min',
     note: 'Lombar sempre controlada.',
-    rest: 40,
+    pairs: [[0, 1], [2, 3], [4]],
     items: [
       'Hollow hold — 3 × 20–30 s',
       'Dead bug — 3 × 8 cada lado',

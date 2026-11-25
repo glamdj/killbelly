@@ -924,8 +924,8 @@
       title: "Calistenia A \u2014 parte superior + core",
       place: "Circuito do condom\xEDnio",
       dur: "40\u201345 min",
-      note: "Aquecimento de 5\u20138 min primeiro. Descanso de 60\u201390 s entre s\xE9ries.",
-      rest: 75,
+      note: "Aquecimento de 5\u20138 min primeiro. Pausas por tipo de exerc\xEDcio (ajust\xE1veis em Defini\xE7\xF5es). Experimente o modo pares.",
+      pairs: [[1, 3], [2, 4], [5, 7], [6]],
       items: [
         "Aquecimento: marcha r\xE1pida 3 min, c\xEDrculos de bra\xE7os, rota\xE7\xF5es de anca, 10 agachamentos, 20 s suspenso na barra",
         "Remada australiana na barra baixa \u2014 3 \xD7 8\u201312",
@@ -941,8 +941,8 @@
       title: "Calistenia B \u2014 pernas + core",
       place: "Circuito do condom\xEDnio",
       dur: "45\u201350 min",
-      note: "Descanso de 60 s entre s\xE9ries.",
-      rest: 60,
+      note: "Pausas por tipo de exerc\xEDcio (ajust\xE1veis em Defini\xE7\xF5es). Experimente o modo pares.",
+      pairs: [[1, 6], [2, 7], [3, 5], [4]],
       items: [
         "Aquecimento: marcha r\xE1pida 3 min, rota\xE7\xF5es de anca e tornozelos, 10 agachamentos",
         "Agachamento goblet com haltere 3 kg \u2014 3 \xD7 15",
@@ -978,7 +978,7 @@
       place: "Casa",
       dur: "15 min",
       note: "Na roda, ir s\xF3 at\xE9 onde consegue manter a lombar direita.",
-      rest: 45,
+      pairs: [[0, 1], [2, 3], [4]],
       items: [
         "Roda de abdominais, de joelhos \u2014 3 \xD7 6\u201310",
         "Russian twist com haltere 3 kg \u2014 3 \xD7 20",
@@ -1035,8 +1035,8 @@
       title: "Corpo inteiro em casa (sem material)",
       place: "Casa / parque",
       dur: "35\u201340 min",
-      note: "Sem equipamento. 3 s\xE9ries de cada exerc\xEDcio, 45\u201360 s de descanso entre s\xE9ries. Uma cadeira firme chega.",
-      rest: 50,
+      note: "Sem equipamento. 3 s\xE9ries de cada exerc\xEDcio; ideal em modo pares. Uma cadeira firme chega.",
+      pairs: [[2, 1], [4, 3], [5, 6], [7]],
       items: [
         "Aquecimento: marcha no lugar 3 min, c\xEDrculos de bra\xE7os, 10 agachamentos",
         "Agachamento \u2014 3 \xD7 15\u201320",
@@ -1053,7 +1053,7 @@
       place: "Casa",
       dur: "15 min",
       note: "Lombar sempre controlada.",
-      rest: 40,
+      pairs: [[0, 1], [2, 3], [4]],
       items: [
         "Hollow hold \u2014 3 \xD7 20\u201330 s",
         "Dead bug \u2014 3 \xD7 8 cada lado",
@@ -1816,23 +1816,24 @@
       return;
     }
     const st = steps[idx];
-    const rem = paused != null ? paused : Math.max(0, Math.ceil((endAt - Date.now()) / 1e3));
-    const pct = st.sec ? Math.min(100, (st.sec - rem) / st.sec * 100) : 0;
+    const rem = st.manual ? Math.floor((Date.now() - endAt) / 1e3) : paused != null ? paused : Math.max(0, Math.ceil((endAt - Date.now()) / 1e3));
+    const pct = st.manual ? 0 : st.sec ? Math.min(100, (st.sec - rem) / st.sec * 100) : 0;
     const next = steps[idx + 1];
     bar.className = `on ${st.kind}`;
-    bar.innerHTML = `<div class="c-top"><span class="c-kind">${st.kind === "rest" ? "Pausa" : st.kind === "prep" ? "Prepare-se" : "Trabalho"}</span>
+    bar.innerHTML = `<div class="c-top"><span class="c-kind">${st.kind === "rest" ? "Pausa" : st.kind === "prep" ? "Prepare-se" : st.manual ? "S\xE9rie \u2014 toque em Feito no fim" : "Trabalho"}</span>
     <span class="c-step">${idx + 1}/${steps.length}</span></div>
     <div class="c-label">${st.label}</div>
     <div class="c-time">${fmt(rem)}</div>
     <div class="c-prog"><div style="width:${pct}%"></div></div>
+    ${st.reps ? `<div class="c-reps">${st.reps} repeti\xE7\xF5es</div>` : ""}
     ${next ? `<div class="c-next">A seguir: ${next.label}</div>` : ""}
-    <div class="c-btns"><button data-c="minus">\u221215 s</button><button data-c="pause">${paused != null ? "\u25B6 Retomar" : "\u23F8 Pausa"}</button><button data-c="plus">+15 s</button><button data-c="skip">\u23ED</button><button data-c="stop">\u2715</button></div>`;
+    <div class="c-btns">${st.manual ? '<button data-c="skip" class="done">\u2713 Feito</button>' : `<button data-c="minus">\u221215 s</button><button data-c="pause">${paused != null ? "\u25B6 Retomar" : "\u23F8 Pausa"}</button><button data-c="plus">+15 s</button><button data-c="skip">\u23ED</button>`}<button data-c="stop">\u2715</button></div>`;
   }
   function startStep(i) {
     idx = i;
     spoken = {};
     const st = steps[idx];
-    endAt = Date.now() + st.sec * 1e3;
+    endAt = st.manual ? Date.now() : Date.now() + st.sec * 1e3;
     paused = null;
     if (st.say) say(st.say);
     beep(st.kind === "work" ? 1040 : 660, 220);
@@ -1850,6 +1851,10 @@
   function tick() {
     if (!steps.length || paused != null) return;
     const st = steps[idx];
+    if (st.manual) {
+      draw();
+      return;
+    }
     const rem = Math.ceil((endAt - Date.now()) / 1e3);
     const elapsed = st.sec - rem;
     for (const m of st.mid || []) if (elapsed >= m.at && !spoken["m" + m.at]) {
@@ -1885,7 +1890,7 @@
       clearInterval(timer);
       timer = null;
     }
-    steps = newSteps.filter((s) => s.sec > 0);
+    steps = newSteps.filter((s) => s.manual || s.sec > 0);
     onFinish = finished || null;
     if (!steps.length) {
       if (finished) finished(true);
@@ -2148,6 +2153,11 @@
     chaNoite: "21:15",
     metaPeso: "",
     voz: true,
+    pausaDificil: 60,
+    pausaLeve: 40,
+    pausaCore: 25,
+    pausaPar: 45,
+    pausaTroca: 10,
     feriasModo: "auto",
     feriasInicio: "2026-12-17",
     feriasFim: "2027-01-08",
@@ -2353,17 +2363,30 @@
     return { n, sec, sides: !!sec && /cada lado/.test(text) };
   }
   var exName = (t) => t.split(" \u2014 ")[0].replace(/\(.*?\)/g, "").trim();
+  function exType(t) {
+    if (/Elevações|Remada|Flexões|Fundos|Press de ombro|Roda de abdominais/i.test(t)) return "dificil";
+    if (/Prancha|Dead bug|Hollow|Vacuum|Abdominais|Elevação de (joelhos|pernas)|Mountain|Russian/i.test(t)) return "core";
+    return "leve";
+  }
+  var restFor = (t) => Number(state.settings[{ dificil: "pausaDificil", leve: "pausaLeve", core: "pausaCore" }[exType(t)]]) || 45;
+  function repsText(t) {
+    const m = t.match(/×\s*(\d+)(?:–(\d+))?\s*(s\b)?/);
+    if (/×\s*máximo/.test(t)) return { txt: "m\xE1ximo", say: "o m\xE1ximo de repeti\xE7\xF5es" };
+    if (!m || m[3]) return null;
+    const extra = /cada perna/.test(t) ? " cada perna" : /cada braço/.test(t) ? " cada bra\xE7o" : /cada lado/.test(t) ? " cada lado" : "";
+    return m[2] ? { txt: `${m[1]}\u2013${m[2]}${extra}`, say: `${m[1]} a ${m[2]} repeti\xE7\xF5es${extra}` } : { txt: `${m[1]}${extra}`, say: `${m[1]} repeti\xE7\xF5es${extra}` };
+  }
   function setsRow(k, slot, i, it, lg, editable) {
     const ps = parseSets(it);
     if (!ps || !editable) return "";
     const done = lg.sets && lg.sets[i] || 0;
     let b = "";
     for (let j = 0; j < ps.n; j++) b += `<button class="setb ${j < done ? "ok" : j === done ? "next" : ""}" data-setb="${k}|${slot}|${i}|${j}">${j < done ? "\u2713" : j + 1}</button>`;
-    return `<div class="sets"><span class="muted small">${ps.sec ? `\u23F1 ${ps.sec} s${ps.sides ? " cada lado" : ""}` : "S\xE9ries"}</span>${b}</div>`;
+    return `<div class="sets"><span class="muted small">${ps.sec ? `\u23F1 ${ps.sec} s${ps.sides ? " cada lado" : ""}` : "S\xE9ries"} \xB7 pausa ${restFor(it)} s</span>${b}</div>`;
   }
   function guidedBtns(k, slot, ses) {
     const g = ses.guided;
-    if (!g) return "";
+    if (!g) return ses.pairs ? `<div class="row guided"><button class="btn sm" data-guided="${k}|${slot}|pairs">\u{1F501} Modo pares com voz</button></div><p class="muted small">Pares: ${ses.pairs.map((p) => p.map((i) => exName(ses.items[i])).join(" + ")).join(" \xB7 ")}</p>` : "";
     if (g.type === "circuit") return `<div class="row guided">${g.rounds.map((r) => `<button class="btn sm" data-guided="${k}|${slot}|${r}">\u{1F50A} Circuito guiado \xB7 ${r} voltas</button>`).join("")}</div>`;
     return `<div class="row guided"><button class="btn sm" data-guided="${k}|${slot}|0">\u{1F50A} Iniciar intervalos com voz</button></div>`;
   }
@@ -2566,7 +2589,7 @@
     ${tg("notifChas", "\u{1F375} Ch\xE1s")}${tm("chaManha", "Ch\xE1 da manh\xE3")}${tm("chaNoite", "Infus\xE3o da noite")}
     <p class="muted small">${lastSched ? lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? " (pr\xE9-visualiza\xE7\xE3o web)" : ""}${lastSched.warning ? " \u2014 sem permiss\xE3o de alarme exato, podem atrasar" : ""}.` : ""}</p>
     <button class="btn" data-act="test">Enviar notifica\xE7\xE3o de teste (5 s)</button></section>
-  <section class="card"><h2>\u{1F50A} Treinador</h2>${tg("voz", "Voz durante o treino")}<p class="muted small">Contagem de s\xE9ries, pausas e intervalos com voz em portugu\xEAs. O ecr\xE3 fica ligado enquanto o temporizador corre.</p>
+  <section class="card"><h2>\u{1F50A} Treinador</h2>${tg("voz", "Voz durante o treino")}${nm("pausaDificil", "Pausa \xB7 exerc\xEDcios dif\xEDceis (s)", 5)}${nm("pausaLeve", "Pausa \xB7 exerc\xEDcios leves (s)", 5)}${nm("pausaCore", "Pausa \xB7 core (s)", 5)}${nm("pausaPar", "Pausa no fim de cada par (s)", 5)}${nm("pausaTroca", "Troca dentro do par (s)", 5)}<p class="muted small">Dif\xEDceis: eleva\xE7\xF5es, remada, flex\xF5es, fundos, press, roda. Core: pranchas, dead bug, hollow, abdominais, eleva\xE7\xF5es de pernas. Leves: o resto. Contagem de s\xE9ries, pausas e intervalos com voz em portugu\xEAs. O ecr\xE3 fica ligado enquanto o temporizador corre.</p>
     <button class="btn ghost sm" data-act="testVoz">Testar voz</button></section>
   <section class="card"><h2>\u{1F3D6}\uFE0F Modo f\xE9rias</h2>
     <label class="fld"><span>Ativar</span><select data-set="feriasModo">${[["auto", "Autom\xE1tico nas datas"], ["on", "Sempre ligado"], ["off", "Desligado"]].map(([v, l]) => `<option value="${v}" ${s.feriasModo === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
@@ -2616,7 +2639,7 @@
       render();
       return;
     }
-    const rest = ses.rest || 60, name = exName(it), nr = done + 1;
+    const rest = restFor(it), name = exName(it), nr = done + 1;
     const finishSet = () => {
       l.sets[i] = nr;
       if (nr >= ps.n) {
@@ -2651,6 +2674,7 @@
   }
   function guided(k, slot, rounds) {
     const ses = sesOf(k, slot), g = ses.guided, steps2 = [];
+    if (rounds === "pairs") return pairsRun(k, slot, ses);
     if (g.type === "circuit") {
       const R = Number(rounds);
       steps2.push({ kind: "prep", label: `Circuito \xB7 ${R} voltas`, sec: 10, say: `Circuito de ${R} voltas. Primeiro: ${g.ex[0]}. Prepare-se.` });
@@ -2693,6 +2717,62 @@
         render();
       });
     }
+  }
+  function pairsRun(k, slot, ses) {
+    const st = state.settings, l = slotLog(k, slot), steps2 = [];
+    l.sets = l.sets || {};
+    l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s;
+    const mark = (i, n) => () => {
+      l.sets[i] = Math.max(l.sets[i] || 0, n);
+      const ps = parseSets(ses.items[i]);
+      if (ps && l.sets[i] >= ps.n) markItem(k, slot, i);
+      save();
+      render();
+    };
+    steps2.push({ kind: "prep", label: "Modo pares", sec: 8, say: `Modo pares. Primeiro par: ${ses.pairs[0].map((i) => exName(ses.items[i])).join(" e ")}.` });
+    ses.pairs.forEach((pair, pi) => {
+      const sets = Math.max(...pair.map((i) => (parseSets(ses.items[i]) || { n: 1 }).n));
+      for (let s = 1; s <= sets; s++) {
+        pair.forEach((i, ei) => {
+          const it = ses.items[i], ps = parseSets(it), name = exName(it);
+          if (!ps || s > ps.n || (l.sets[i] || 0) >= s) return;
+          const head = `${name} \xB7 s\xE9rie ${s}/${ps.n}`;
+          if (ps.sec) {
+            if (ps.sides) {
+              steps2.push({ kind: "work", label: `${head} \xB7 lado direito`, sec: ps.sec, say: `${name}. Lado direito. Vai!` });
+              steps2.push({ kind: "prep", label: "Troca de lado", sec: 5, say: "Troca de lado." });
+              steps2.push({ kind: "work", label: `${head} \xB7 lado esquerdo`, sec: ps.sec, say: "Lado esquerdo. Vai!", onEnd: mark(i, s) });
+            } else steps2.push({ kind: "work", label: head, sec: ps.sec, say: `${name}. ${ps.sec} segundos. Vai!`, onEnd: mark(i, s) });
+          } else {
+            const r = repsText(it);
+            steps2.push({ kind: "work", manual: true, label: head, reps: r ? r.txt : "", say: `${name}. S\xE9rie ${s}. ${r ? r.say : ""}`, onEnd: mark(i, s) });
+          }
+          const lastInPair = ei === pair.length - 1 || pair.slice(ei + 1).every((j) => {
+            const p2 = parseSets(ses.items[j]);
+            return !p2 || s > p2.n;
+          });
+          if (!lastInPair) {
+            const nx = exName(ses.items[pair[ei + 1]]);
+            steps2.push({ kind: "prep", label: `Troca \u2192 ${nx}`, sec: Number(st.pausaTroca) || 10, say: `Troca. ${nx}.` });
+          } else {
+            const lastAll = pi === ses.pairs.length - 1 && s === sets;
+            if (!lastAll) {
+              const nextPair = s < sets ? pair : ses.pairs[pi + 1];
+              const label = s < sets ? `Pausa \xB7 a seguir: s\xE9rie ${s + 1}` : `Pausa \xB7 pr\xF3ximo par: ${nextPair.map((j) => exName(ses.items[j])).join(" + ")}`;
+              const pr = pair.length > 1 ? Number(st.pausaPar) || 45 : restFor(ses.items[pair[0]]);
+              steps2.push({ kind: "rest", label, sec: pr, say: s < sets ? `Pausa. ${pr} segundos.` : `Par conclu\xEDdo. Pausa de ${pr} segundos. A seguir: ${nextPair.map((j) => exName(ses.items[j])).join(" e ")}.` });
+            }
+          }
+        });
+      }
+    });
+    run(steps2, (ok) => {
+      if (ok) {
+        say("Treino de pares conclu\xEDdo. Muito bem!");
+        save();
+        render();
+      }
+    });
   }
   app.addEventListener("click", async (e) => {
     const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided]");

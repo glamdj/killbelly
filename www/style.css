@@ -61,3 +61,4 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:3px 0}
 .c-next{font-size:12px;opacity:.85;margin-top:6px}
 .c-btns{display:flex;gap:6px;margin-top:10px}.c-btns button{flex:1;border:0;border-radius:10px;padding:9px 4px;background:rgba(255,255,255,.18);color:#fff;font-weight:700;font-size:13px}
 body.coaching main{padding-bottom:340px}
+.c-reps{text-align:center;font-size:18px;font-weight:700;margin-top:-2px}.c-btns button.done{background:#fff;color:var(--acc2);flex:3;font-size:16px}

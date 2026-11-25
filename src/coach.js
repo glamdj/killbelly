@@ -42,23 +42,24 @@ function draw() {
   document.body.classList.toggle('coaching', steps.length > 0);
   if (!steps.length) { bar.className = ''; bar.innerHTML = ''; return; }
   const st = steps[idx];
-  const rem = paused != null ? paused : Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
-  const pct = st.sec ? Math.min(100, ((st.sec - rem) / st.sec) * 100) : 0;
+  const rem = st.manual ? Math.floor((Date.now() - endAt) / 1000) : paused != null ? paused : Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+  const pct = st.manual ? 0 : st.sec ? Math.min(100, ((st.sec - rem) / st.sec) * 100) : 0;
   const next = steps[idx + 1];
   bar.className = `on ${st.kind}`;
-  bar.innerHTML = `<div class="c-top"><span class="c-kind">${st.kind === 'rest' ? 'Pausa' : st.kind === 'prep' ? 'Prepare-se' : 'Trabalho'}</span>
+  bar.innerHTML = `<div class="c-top"><span class="c-kind">${st.kind === 'rest' ? 'Pausa' : st.kind === 'prep' ? 'Prepare-se' : st.manual ? 'Série — toque em Feito no fim' : 'Trabalho'}</span>
     <span class="c-step">${idx + 1}/${steps.length}</span></div>
     <div class="c-label">${st.label}</div>
     <div class="c-time">${fmt(rem)}</div>
     <div class="c-prog"><div style="width:${pct}%"></div></div>
+    ${st.reps ? `<div class="c-reps">${st.reps} repetições</div>` : ''}
     ${next ? `<div class="c-next">A seguir: ${next.label}</div>` : ''}
-    <div class="c-btns"><button data-c="minus">−15 s</button><button data-c="pause">${paused != null ? '▶ Retomar' : '⏸ Pausa'}</button><button data-c="plus">+15 s</button><button data-c="skip">⏭</button><button data-c="stop">✕</button></div>`;
+    <div class="c-btns">${st.manual ? '<button data-c="skip" class="done">✓ Feito</button>' : `<button data-c="minus">−15 s</button><button data-c="pause">${paused != null ? '▶ Retomar' : '⏸ Pausa'}</button><button data-c="plus">+15 s</button><button data-c="skip">⏭</button>`}<button data-c="stop">✕</button></div>`;
 }
 
 function startStep(i) {
   idx = i; spoken = {};
   const st = steps[idx];
-  endAt = Date.now() + st.sec * 1000; paused = null;
+  endAt = st.manual ? Date.now() : Date.now() + st.sec * 1000; paused = null;
   if (st.say) say(st.say);
   beep(st.kind === 'work' ? 1040 : 660, 220);
   draw();
@@ -74,6 +75,7 @@ function finishStep() {
 function tick() {
   if (!steps.length || paused != null) return;
   const st = steps[idx];
+  if (st.manual) { draw(); return; }
   const rem = Math.ceil((endAt - Date.now()) / 1000);
   const elapsed = st.sec - rem;
   for (const m of st.mid || []) if (elapsed >= m.at && !spoken['m' + m.at]) { spoken['m' + m.at] = 1; say(m.say); beep(760, 160); }
@@ -93,7 +95,7 @@ function end(completed) {
 
 export function run(newSteps, finished) {
   if (timer) { clearInterval(timer); timer = null; }
-  steps = newSteps.filter((s) => s.sec > 0); onFinish = finished || null;
+  steps = newSteps.filter((s) => s.manual || s.sec > 0); onFinish = finished || null;
   if (!steps.length) { if (finished) finished(true); return; }
   KeepAwake.keepAwake().catch(() => {});
   startStep(0);

@@ -12,7 +12,7 @@ const DEFAULT_SETTINGS = {
   notifPeso: true, pesoHora: '05:05', cinturaDia: 1,
   notifCerveja: true, cervejaHora: '17:30', cervejaSabado: '13:30', metaCerveja: 10,
   notifChas: true, chaManha: '10:00', chaNoite: '21:15',
-  metaPeso: '', voz: true,
+  metaPeso: '', voz: true, pausaDificil: 60, pausaLeve: 40, pausaCore: 25, pausaPar: 45, pausaTroca: 10,
   feriasModo: 'auto', feriasInicio: '2026-12-17', feriasFim: '2027-01-08',
   vPeso: '10:15', vAguaInicio: '10:30', vAguaFim: '22:30', vMetaAgua: 2500, vCerveja: '19:30', vChaManha: '16:00', vChaNoite: '23:00',
 };
@@ -164,6 +164,20 @@ function parseSets(text) {
   return { n, sec, sides: !!sec && /cada lado/.test(text) };
 }
 const exName = (t) => t.split(' — ')[0].replace(/\(.*?\)/g, '').trim();
+// Tipo de exercício → pausa entre séries
+function exType(t) {
+  if (/Elevações|Remada|Flexões|Fundos|Press de ombro|Roda de abdominais/i.test(t)) return 'dificil';
+  if (/Prancha|Dead bug|Hollow|Vacuum|Abdominais|Elevação de (joelhos|pernas)|Mountain|Russian/i.test(t)) return 'core';
+  return 'leve';
+}
+const restFor = (t) => Number(state.settings[{ dificil: 'pausaDificil', leve: 'pausaLeve', core: 'pausaCore' }[exType(t)]]) || 45;
+function repsText(t) {
+  const m = t.match(/×\s*(\d+)(?:–(\d+))?\s*(s\b)?/);
+  if (/×\s*máximo/.test(t)) return { txt: 'máximo', say: 'o máximo de repetições' };
+  if (!m || m[3]) return null;
+  const extra = /cada perna/.test(t) ? ' cada perna' : /cada braço/.test(t) ? ' cada braço' : /cada lado/.test(t) ? ' cada lado' : '';
+  return m[2] ? { txt: `${m[1]}–${m[2]}${extra}`, say: `${m[1]} a ${m[2]} repetições${extra}` } : { txt: `${m[1]}${extra}`, say: `${m[1]} repetições${extra}` };
+}
 
 function setsRow(k, slot, i, it, lg, editable) {
   const ps = parseSets(it);
@@ -171,11 +185,12 @@ function setsRow(k, slot, i, it, lg, editable) {
   const done = (lg.sets && lg.sets[i]) || 0;
   let b = '';
   for (let j = 0; j < ps.n; j++) b += `<button class="setb ${j < done ? 'ok' : j === done ? 'next' : ''}" data-setb="${k}|${slot}|${i}|${j}">${j < done ? '✓' : j + 1}</button>`;
-  return `<div class="sets"><span class="muted small">${ps.sec ? `⏱ ${ps.sec} s${ps.sides ? ' cada lado' : ''}` : 'Séries'}</span>${b}</div>`;
+  return `<div class="sets"><span class="muted small">${ps.sec ? `⏱ ${ps.sec} s${ps.sides ? ' cada lado' : ''}` : 'Séries'} · pausa ${restFor(it)} s</span>${b}</div>`;
 }
 
 function guidedBtns(k, slot, ses) {
-  const g = ses.guided; if (!g) return '';
+  const g = ses.guided;
+  if (!g) return ses.pairs ? `<div class="row guided"><button class="btn sm" data-guided="${k}|${slot}|pairs">🔁 Modo pares com voz</button></div><p class="muted small">Pares: ${ses.pairs.map((p) => p.map((i) => exName(ses.items[i])).join(' + ')).join(' · ')}</p>` : '';
   if (g.type === 'circuit') return `<div class="row guided">${g.rounds.map((r) => `<button class="btn sm" data-guided="${k}|${slot}|${r}">🔊 Circuito guiado · ${r} voltas</button>`).join('')}</div>`;
   return `<div class="row guided"><button class="btn sm" data-guided="${k}|${slot}|0">🔊 Iniciar intervalos com voz</button></div>`;
 }
@@ -382,7 +397,7 @@ function vDef() {
     ${tg('notifChas', '🍵 Chás')}${tm('chaManha', 'Chá da manhã')}${tm('chaNoite', 'Infusão da noite')}
     <p class="muted small">${lastSched ? (lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? ' (pré-visualização web)' : ''}${lastSched.warning ? ' — sem permissão de alarme exato, podem atrasar' : ''}.`) : ''}</p>
     <button class="btn" data-act="test">Enviar notificação de teste (5 s)</button></section>
-  <section class="card"><h2>🔊 Treinador</h2>${tg('voz', 'Voz durante o treino')}<p class="muted small">Contagem de séries, pausas e intervalos com voz em português. O ecrã fica ligado enquanto o temporizador corre.</p>
+  <section class="card"><h2>🔊 Treinador</h2>${tg('voz', 'Voz durante o treino')}${nm('pausaDificil', 'Pausa · exercícios difíceis (s)', 5)}${nm('pausaLeve', 'Pausa · exercícios leves (s)', 5)}${nm('pausaCore', 'Pausa · core (s)', 5)}${nm('pausaPar', 'Pausa no fim de cada par (s)', 5)}${nm('pausaTroca', 'Troca dentro do par (s)', 5)}<p class="muted small">Difíceis: elevações, remada, flexões, fundos, press, roda. Core: pranchas, dead bug, hollow, abdominais, elevações de pernas. Leves: o resto. Contagem de séries, pausas e intervalos com voz em português. O ecrã fica ligado enquanto o temporizador corre.</p>
     <button class="btn ghost sm" data-act="testVoz">Testar voz</button></section>
   <section class="card"><h2>🏖️ Modo férias</h2>
     <label class="fld"><span>Ativar</span><select data-set="feriasModo">${[['auto', 'Automático nas datas'], ['on', 'Sempre ligado'], ['off', 'Desligado']].map(([v, l]) => `<option value="${v}" ${s.feriasModo === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
@@ -421,7 +436,7 @@ function setTap(k, slot, i, j) {
   l.sets = l.sets || {};
   const done = l.sets[i] || 0;
   if (j < done) { l.sets[i] = j; l.checks = l.checks.filter((x) => x !== i); l.done = false; save(); render(); return; }
-  const rest = ses.rest || 60, name = exName(it), nr = done + 1;
+  const rest = restFor(it), name = exName(it), nr = done + 1;
   const finishSet = () => {
     l.sets[i] = nr;
     if (nr >= ps.n) { markItem(k, slot, i); if (!l.done) say(`${name} concluído.`); save(); render(); return; }
@@ -440,6 +455,7 @@ function setTap(k, slot, i, j) {
 }
 function guided(k, slot, rounds) {
   const ses = sesOf(k, slot), g = ses.guided, steps = [];
+  if (rounds === 'pairs') return pairsRun(k, slot, ses);
   if (g.type === 'circuit') {
     const R = Number(rounds);
     steps.push({ kind: 'prep', label: `Circuito · ${R} voltas`, sec: 10, say: `Circuito de ${R} voltas. Primeiro: ${g.ex[0]}. Prepare-se.` });
@@ -475,6 +491,54 @@ function guided(k, slot, rounds) {
       say('Terminado! Faça os alongamentos.'); save(); render();
     });
   }
+}
+
+// Modo pares: A1, (troca), B1, pausa; A2, B2, pausa…
+function pairsRun(k, slot, ses) {
+  const st = state.settings, l = slotLog(k, slot), steps = [];
+  l.sets = l.sets || {};
+  l.s = profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s;
+  const mark = (i, n) => () => {
+    l.sets[i] = Math.max(l.sets[i] || 0, n);
+    const ps = parseSets(ses.items[i]);
+    if (ps && l.sets[i] >= ps.n) markItem(k, slot, i);
+    save(); render();
+  };
+  steps.push({ kind: 'prep', label: 'Modo pares', sec: 8, say: `Modo pares. Primeiro par: ${ses.pairs[0].map((i) => exName(ses.items[i])).join(' e ')}.` });
+  ses.pairs.forEach((pair, pi) => {
+    const sets = Math.max(...pair.map((i) => (parseSets(ses.items[i]) || { n: 1 }).n));
+    for (let s = 1; s <= sets; s++) {
+      pair.forEach((i, ei) => {
+        const it = ses.items[i], ps = parseSets(it), name = exName(it);
+        if (!ps || s > ps.n || (l.sets[i] || 0) >= s) return; // já feito
+        const head = `${name} · série ${s}/${ps.n}`;
+        if (ps.sec) {
+          if (ps.sides) {
+            steps.push({ kind: 'work', label: `${head} · lado direito`, sec: ps.sec, say: `${name}. Lado direito. Vai!` });
+            steps.push({ kind: 'prep', label: 'Troca de lado', sec: 5, say: 'Troca de lado.' });
+            steps.push({ kind: 'work', label: `${head} · lado esquerdo`, sec: ps.sec, say: 'Lado esquerdo. Vai!', onEnd: mark(i, s) });
+          } else steps.push({ kind: 'work', label: head, sec: ps.sec, say: `${name}. ${ps.sec} segundos. Vai!`, onEnd: mark(i, s) });
+        } else {
+          const r = repsText(it);
+          steps.push({ kind: 'work', manual: true, label: head, reps: r ? r.txt : '', say: `${name}. Série ${s}. ${r ? r.say : ''}`, onEnd: mark(i, s) });
+        }
+        const lastInPair = ei === pair.length - 1 || pair.slice(ei + 1).every((j) => { const p2 = parseSets(ses.items[j]); return !p2 || s > p2.n; });
+        if (!lastInPair) {
+          const nx = exName(ses.items[pair[ei + 1]]);
+          steps.push({ kind: 'prep', label: `Troca → ${nx}`, sec: Number(st.pausaTroca) || 10, say: `Troca. ${nx}.` });
+        } else {
+          const lastAll = pi === ses.pairs.length - 1 && s === sets;
+          if (!lastAll) {
+            const nextPair = s < sets ? pair : ses.pairs[pi + 1];
+            const label = s < sets ? `Pausa · a seguir: série ${s + 1}` : `Pausa · próximo par: ${nextPair.map((j) => exName(ses.items[j])).join(' + ')}`;
+            const pr = pair.length > 1 ? Number(st.pausaPar) || 45 : restFor(ses.items[pair[0]]);
+            steps.push({ kind: 'rest', label, sec: pr, say: s < sets ? `Pausa. ${pr} segundos.` : `Par concluído. Pausa de ${pr} segundos. A seguir: ${nextPair.map((j) => exName(ses.items[j])).join(' e ')}.` });
+          }
+        }
+      });
+    }
+  });
+  coachRun(steps, (ok) => { if (ok) { say('Treino de pares concluído. Muito bem!'); save(); render(); } });
 }
 
 // ---------- Eventos ----------
