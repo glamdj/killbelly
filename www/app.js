@@ -2507,7 +2507,7 @@
   });
 
   // src/version.js
-  var NATIVE = 8;
+  var NATIVE = 9;
   var WEB = true ? 0 : 0;
 
   // src/updater.js
@@ -2546,7 +2546,7 @@
           });
         }
       } else if (L2.minNative <= NATIVE && L2.web > WEB && Capacitor.isNativePlatform()) {
-        const b = await CapacitorUpdater.download({ url: BASE + L2.zip, version: String(L2.web) });
+        const b = await CapacitorUpdater.download({ url: BASE + L2.zip, version: String(L2.web), checksum: L2.sha256 });
         await CapacitorUpdater.next({ id: b.id });
         status.pending = { id: b.id, web: L2.web, notes: L2.notes };
       }

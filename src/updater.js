@@ -32,7 +32,7 @@ export async function checkUpdates({ manual = false } = {}) {
         }] }).catch(() => {});
       }
     } else if (L.minNative <= NATIVE && L.web > WEB && Capacitor.isNativePlatform()) {
-      const b = await CapacitorUpdater.download({ url: BASE + L.zip, version: String(L.web) });
+      const b = await CapacitorUpdater.download({ url: BASE + L.zip, version: String(L.web), checksum: L.sha256 });
       await CapacitorUpdater.next({ id: b.id });
       status.pending = { id: b.id, web: L.web, notes: L.notes };
     }
