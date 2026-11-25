@@ -2717,7 +2717,7 @@
         const pt = profile(state2, tmr);
         if (s.snackPrep && !pt.vac && tmr.getDay() !== 0) {
           const [a1, a2] = snacksFor(tmr);
-          push({ id: base + 52, title: "\u{1F961} Preparar os snacks de amanh\xE3", body: `Manh\xE3: ${a1.name}. Tarde: ${a2.name}. Preparar: ${a1.prep}${a2.prep !== a1.prep ? `; ${a2.prep}` : ""}.`, channelId: "chas", extra: { kind: "snack" }, schedule: { at: at(day, s.snackPrep) } });
+          push({ id: base + 52, title: "\u{1F961} Preparar os snacks de amanh\xE3", body: `Manh\xE3: ${a1.name}. Tarde: ${a2.name}. Preparar: ${a1.prep}${a2.prep !== a1.prep ? `; ${a2.prep}` : ""}. Toque para ver o menu de amanh\xE3.`, channelId: "chas", extra: { kind: "snack" }, schedule: { at: at(day, s.snackPrep) } });
         }
       }
       if (s.notifChas) {
@@ -2832,7 +2832,8 @@
       waist: s.waist || {},
       alc: s.alc || migrateBeer(s.beer || {}),
       log: s.log || {},
-      shop: s.shop || { sel: [], checked: {} }
+      shop: s.shop || { sel: [], checked: {} },
+      menu: s.menu || {}
     };
   }
   var state = load();
@@ -2966,8 +2967,10 @@
   }
   var planEdit = null;
   var planWeek = () => (planEdit || (isVacation(state) ? "ferias" : "normal")) === "ferias" ? state.weekFerias : state.week;
+  var recTab = "refeicoes";
+  var menuDay = null;
   var tab = "hoje";
-  var nutriTab = "chas";
+  var nutriTab = "menu";
   var open = {};
   var exactStatus = "granted";
   var notifOk = true;
@@ -3191,18 +3194,76 @@
   <section class="card"><h2>\u{1F4A7} \xC1gua \u2014 \xFAltimos 7 dias (L)</h2>${barChart(waterBars, { goal: s.metaAgua / 1e3 })}</section>
   <section class="card"><h2>\u{1F377} Bebidas alco\xF3licas por semana</h2>${barChart(beerBars, { goal: s.metaCerveja })}<p class="muted small">A linha \xE9 a sua meta semanal (${s.metaCerveja}).</p></section>`;
   }
+  var recCat = (r) => /^(Lanche|Petisco|Pós-treino)/.test(r.meal) ? "lanche" : /Pequeno-almoço/.test(r.meal) ? "pa" : "main";
+  var MEALS = { pa: ["\u{1F373}", "Pequeno-almo\xE7o"], al: ["\u{1F37D}\uFE0F", "Almo\xE7o"], ja: ["\u{1F319}", "Jantar"] };
+  function candidates(slot, date) {
+    const we = [0, 6].includes(date.getDay());
+    return RECIPES.filter((r) => {
+      if (slot === "pa") return recCat(r) === "pa";
+      if (recCat(r) !== "main") return false;
+      if (/fim de semana/.test(r.meal) && !we) return false;
+      return slot === "al" ? /Almoço|Entrada/i.test(r.meal) : /[Jj]antar/.test(r.meal);
+    });
+  }
+  function menuFor(date) {
+    const k = dkey2(date), d0 = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 864e5);
+    const m = { ...state.menu[k] || {} };
+    for (const slot of ["pa", "al", "ja"]) {
+      const c = candidates(slot, date);
+      if (!m[slot] || !RECIPES.some((r) => r.id === m[slot])) {
+        let i = (d0 * (slot === "ja" ? 3 : 1) + (slot === "ja" ? 5 : 0)) % c.length;
+        if (slot === "ja" && c[i].id === m.al) i = (i + 1) % c.length;
+        m[slot] = c[i].id;
+      }
+    }
+    return m;
+  }
+  function swapMeal(k, slot) {
+    const date = fromKey(k), m = menuFor(date), c = candidates(slot, date);
+    let i = (c.findIndex((r) => r.id === m[slot]) + 1) % c.length;
+    if (slot !== "pa" && c[i].id === m[slot === "al" ? "ja" : "al"]) i = (i + 1) % c.length;
+    state.menu[k] = { ...m, [slot]: c[i].id };
+    const lim = dkey2(addDays(/* @__PURE__ */ new Date(), -14));
+    for (const key of Object.keys(state.menu)) if (key < lim) delete state.menu[key];
+    save();
+    render();
+  }
+  function recipeCard(r, extra = "") {
+    const sel = state.shop.sel.includes(r.id), oid = `rec-${r.id}`;
+    return `<section class="card"><div class="plan-h" data-toggle="${oid}"><div><b>${r.name}</b><div class="muted small">${r.meal} \xB7 ${r.time} \xB7 ${r.serves} ${r.serves > 1 ? "pessoas" : "pessoa"}</div></div><div class="chev">${open[oid] ? "\u25B4" : "\u25BE"}</div></div>
+    ${open[oid] ? `<h3>Ingredientes</h3><ul class="small">${r.ing.map((x) => `<li>${x.q} ${x.i}</li>`).join("")}</ul><h3>Prepara\xE7\xE3o</h3><ol class="small">${r.steps.map((x) => `<li>${x}</li>`).join("")}</ol><p class="note">\u{1F4A1} ${r.tip}</p>` : ""}
+    <div class="row">${extra}<button class="btn sm ${sel ? "ghost" : ""}" data-shop="${r.id}">${sel ? "\u2713 Na lista" : "+ Lista de compras"}</button></div></section>`;
+  }
   function vNutri() {
-    const sub = { chas: "Ch\xE1s", receitas: "Receitas", compras: "Compras" };
+    const sub = { menu: "Menu", receitas: "Receitas", chas: "Ch\xE1s", compras: "Compras" };
     let body = "";
-    if (nutriTab === "chas") {
+    if (nutriTab === "menu") {
+      const now = /* @__PURE__ */ new Date();
+      const which = menuDay || (now.getHours() >= 15 ? "amanha" : "hoje");
+      const date = which === "amanha" ? addDays(now, 1) : now, k = dkey2(date);
+      const m = menuFor(date), pr = profile(state, date), s = pr.s;
+      const [sm, st] = snacksFor(date);
+      const dayName = `${DAY_NAMES[date.getDay()]}, ${date.getDate()}/${pad2(date.getMonth() + 1)}`;
+      body = `<div class="seg seg2">${[["hoje", "Hoje"], ["amanha", "Amanh\xE3"]].map(([id, l]) => `<button data-menuday="${id}" class="${which === id ? "on" : ""}">${l}</button>`).join("")}</div>
+      <p class="muted small">${dayName}${pr.vac ? " \xB7 \u{1F3D6}\uFE0F f\xE9rias" : ""}. Sugest\xF5es que mudam todos os dias \u2014 toque em \u{1F504} para trocar.</p>
+      ${s.notifSnack ? `<section class="card"><h2>\u{1F961} ${which === "amanha" ? "Preparar hoje \xE0 noite" : "Snacks de hoje"}</h2>
+        ${s.snackManha && date.getDay() !== 0 ? `<div class="snk"><b>${s.snackManha} \xB7 ${sm.name}</b><div class="muted small">Preparar: ${sm.prep}</div></div>` : ""}
+        ${s.snackTarde ? `<div class="snk"><b>${s.snackTarde} \xB7 ${st.name}</b><div class="muted small">Preparar: ${st.prep}</div></div>` : ""}</section>` : ""}
+      ${["pa", "al", "ja"].map((slot) => {
+        const r = RECIPES.find((x) => x.id === m[slot]);
+        return `<h3 class="meal-h">${MEALS[slot][0]} ${MEALS[slot][1]}</h3>${recipeCard(r, `<button class="btn sm ghost" data-swap="${k}|${slot}">\u{1F504} Trocar</button>`)}`;
+      }).join("")}
+      <button class="btn" data-shopday="${k}">\u{1F6D2} Juntar as refei\xE7\xF5es do dia \xE0 lista de compras</button>`;
+    } else if (nutriTab === "chas") {
       body = `<p class="note">${DETOX_NOTE}</p>${TEAS.map((t) => `<section class="card tea"><b>${t.name}</b><div class="muted small">\u23F0 ${t.when}</div><p class="small">${t.good}</p><p class="muted small">\u{1FAD6} ${t.how}</p></section>`).join("")}`;
     } else if (nutriTab === "receitas") {
-      body = `<p class="muted small">S\xF3 ingredientes comuns de supermercado. Regra do prato: \xBD legumes, \xBC prote\xEDna, \xBC hidratos (arroz, massa, batata, batata-doce, funge).</p>` + RECIPES.map((r) => {
-        const sel = state.shop.sel.includes(r.id), oid = `rec-${r.id}`;
-        return `<section class="card"><div class="plan-h" data-toggle="${oid}"><div><b>${r.name}</b><div class="muted small">${r.meal} \xB7 ${r.time} \xB7 ${r.serves} ${r.serves > 1 ? "pessoas" : "pessoa"}</div></div><div class="chev">${open[oid] ? "\u25B4" : "\u25BE"}</div></div>
-        ${open[oid] ? `<h3>Ingredientes</h3><ul class="small">${r.ing.map((x) => `<li>${x.q} ${x.i}</li>`).join("")}</ul><h3>Prepara\xE7\xE3o</h3><ol class="small">${r.steps.map((x) => `<li>${x}</li>`).join("")}</ol><p class="note">\u{1F4A1} ${r.tip}</p>` : ""}
-        <button class="btn sm ${sel ? "ghost" : ""}" data-shop="${r.id}">${sel ? "\u2713 Na lista de compras" : "+ Lista de compras"}</button></section>`;
-      }).join("");
+      const seg2 = `<div class="seg seg2">${[["refeicoes", "\u{1F37D}\uFE0F Refei\xE7\xF5es"], ["lanches", "\u{1F34E} Lanches"]].map(([id, l]) => `<button data-rectab="${id}" class="${recTab === id ? "on" : ""}">${l}</button>`).join("")}</div>`;
+      if (recTab === "lanches") {
+        body = seg2 + `<p class="muted small">Ideias r\xE1pidas para levar (rodam nos lembretes):</p><section class="card">${SNACKS.map((x) => `<div class="snk"><b>${x.name}</b><div class="muted small">Preparar: ${x.prep}</div></div>`).join("")}</section>` + RECIPES.filter((r) => recCat(r) === "lanche").map((r) => recipeCard(r)).join("");
+      } else {
+        const groups = [["pa", "\u{1F373} Pequeno-almo\xE7o"], ["main", "\u{1F37D}\uFE0F Almo\xE7o e jantar"]];
+        body = seg2 + `<p class="muted small">S\xF3 ingredientes comuns de supermercado. Regra do prato: \xBD legumes, \xBC prote\xEDna, \xBC hidratos (arroz, massa, batata, batata-doce, funge).</p>` + groups.map(([c, l]) => `<h3 class="meal-h">${l}</h3>${RECIPES.filter((r) => recCat(r) === c).map((r) => recipeCard(r)).join("")}`).join("");
+      }
     } else {
       const agg = {};
       for (const id of state.shop.sel) {
@@ -3432,7 +3493,7 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     });
   }
   app.addEventListener("click", async (e) => {
-    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided]");
+    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided],[data-swap],[data-shopday],[data-menuday],[data-rectab]");
     if (!t) return;
     const d = t.dataset;
     if (d.tab) {
@@ -3480,6 +3541,29 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     if (d.plan) {
       planEdit = d.plan;
       render();
+      return;
+    }
+    if (d.swap) {
+      swapMeal(...d.swap.split("|"));
+      return;
+    }
+    if (d.menuday) {
+      menuDay = d.menuday;
+      render();
+      return;
+    }
+    if (d.rectab) {
+      recTab = d.rectab;
+      render();
+      return;
+    }
+    if (d.shopday) {
+      const m = menuFor(fromKey(d.shopday));
+      for (const id of Object.values(m)) if (!state.shop.sel.includes(id)) state.shop.sel.push(id);
+      save();
+      nutriTab = "compras";
+      render();
+      window.scrollTo(0, 0);
       return;
     }
     if (d.setb) {
@@ -3634,6 +3718,13 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     const n = a.notification, extra = n.extra || {};
     if (extra.kind === "apk") {
       openApk();
+      return;
+    }
+    if (extra.kind === "snack") {
+      tab = "nutri";
+      nutriTab = "menu";
+      menuDay = (/* @__PURE__ */ new Date()).getHours() >= 15 ? "amanha" : "hoje";
+      render();
       return;
     }
     if (a.actionId === "drink") addWater(state.settings.copoMl);

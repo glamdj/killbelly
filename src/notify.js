@@ -153,7 +153,7 @@ export function buildNotifications(state, from = new Date()) {
       const pt = profile(state, tmr);
       if (s.snackPrep && !pt.vac && tmr.getDay() !== 0) {
         const [a1, a2] = snacksFor(tmr);
-        push({ id: base + 52, title: '🥡 Preparar os snacks de amanhã', body: `Manhã: ${a1.name}. Tarde: ${a2.name}. Preparar: ${a1.prep}${a2.prep !== a1.prep ? `; ${a2.prep}` : ''}.`, channelId: 'chas', extra: { kind: 'snack' }, schedule: { at: at(day, s.snackPrep) } });
+        push({ id: base + 52, title: '🥡 Preparar os snacks de amanhã', body: `Manhã: ${a1.name}. Tarde: ${a2.name}. Preparar: ${a1.prep}${a2.prep !== a1.prep ? `; ${a2.prep}` : ''}. Toque para ver o menu de amanhã.`, channelId: 'chas', extra: { kind: 'snack' }, schedule: { at: at(day, s.snackPrep) } });
       }
     }
     if (s.notifChas) {
