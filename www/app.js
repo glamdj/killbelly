@@ -2499,7 +2499,7 @@
 
   // src/version.js
   var NATIVE = 8;
-  var WEB = true ? 5 : 0;
+  var WEB = true ? 0 : 0;
 
   // src/updater.js
   var BASE = "https://raw.githubusercontent.com/glamdj/killbelly-updates/main/";
@@ -3050,7 +3050,7 @@
     <section class="card"><h2>\u{1F4A7} \xC1gua <span class="right">${num(w / 1e3, 2)} / ${num(s.metaAgua / 1e3, 1)} L</span></h2>
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
       <div class="row"><button class="btn sm ghost" data-water="-${s.copoMl}">\u2212${s.copoMl}</button><button class="btn sm" data-water="${s.copoMl}">+ copo ${s.copoMl} ml</button><button class="btn sm" data-water="500">+ garrafa 500 ml</button></div>
-      <p class="muted small">Ch\xE1 e infus\xF5es sem a\xE7\xFAcar tamb\xE9m contam.</p></section>
+      <p class="muted small">${w >= s.metaAgua ? "\u2705 Meta de hoje cumprida!" : `Faltam ${num((s.metaAgua - w) / 1e3, 2)} L (\u2248 ${Math.ceil((s.metaAgua - w) / s.copoMl)} copos).`} Ch\xE1 e infus\xF5es sem a\xE7\xFAcar tamb\xE9m contam.</p></section>
     <section class="card"><h2>\u2696\uFE0F Peso de hoje</h2>
       <div class="row"><input id="inPeso" type="number" inputmode="decimal" step="0.1" placeholder="kg" value="${wt != null ? wt : ""}"><button class="btn sm" data-act="savePeso">Guardar</button></div>
       <p class="muted small">${a7 ? `M\xE9dia 7 dias: <b>${num(a7)} kg</b>${a7prev ? ` (${a7 - a7prev <= 0 ? "" : "+"}${num(a7 - a7prev)} vs. semana anterior)` : ""}` : last ? `\xDAltimo: ${num(last)} kg` : "O peso oscila de dia para dia \u2014 o que conta \xE9 a m\xE9dia semanal."}</p>
