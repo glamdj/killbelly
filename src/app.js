@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS = {
   notifPeso: true, pesoHora: '05:05', cinturaDia: 1,
   notifCerveja: true, cervejaHora: '17:30', cervejaSabado: '13:30', metaCerveja: 10,
   notifChas: true, chaManha: '10:00', chaNoite: '21:15',
-  metaPeso: '', voz: true, notifSnack: true, snackManha: '10:30', snackTarde: '16:00', snackPrep: '21:00', vSnackTarde: '16:30', pausaDificil: 60, pausaLeve: 40, pausaCore: 25, pausaPar: 45, pausaTroca: 10,
+  metaPeso: '', voz: true, notifSnack: true, snackManha: '10:30', snackTarde: '16:00', snackPrep: '20:00', vSnackTarde: '16:30', pausaDificil: 60, pausaLeve: 40, pausaCore: 25, pausaPar: 45, pausaTroca: 10,
   feriasModo: 'auto', feriasInicio: '2026-12-17', feriasFim: '2027-01-08',
   vPeso: '10:15', vAguaInicio: '10:30', vAguaFim: '22:30', vMetaAgua: 2500, vCerveja: '19:30', vChaManha: '16:00', vChaNoite: '23:00',
 };
@@ -33,6 +33,7 @@ function load() {
   };
 }
 let state = load();
+if (!state.settings.mig1) { if (state.settings.snackPrep === '21:00') state.settings.snackPrep = '20:00'; state.settings.mig1 = true; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 state.shop.sel = state.shop.sel.filter((id) => RECIPES.some((r) => r.id === id));
 function save(resched = false) {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}

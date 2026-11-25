@@ -2792,7 +2792,7 @@
     notifSnack: true,
     snackManha: "10:30",
     snackTarde: "16:00",
-    snackPrep: "21:00",
+    snackPrep: "20:00",
     vSnackTarde: "16:30",
     pausaDificil: 60,
     pausaLeve: 40,
@@ -2837,6 +2837,14 @@
     };
   }
   var state = load();
+  if (!state.settings.mig1) {
+    if (state.settings.snackPrep === "21:00") state.settings.snackPrep = "20:00";
+    state.settings.mig1 = true;
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch {
+    }
+  }
   state.shop.sel = state.shop.sel.filter((id) => RECIPES.some((r) => r.id === id));
   function save(resched = false) {
     try {
