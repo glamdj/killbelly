@@ -1465,6 +1465,15 @@
     { name: "Papaia ou manga cortada + amendoim", prep: "cortar a fruta para uma caixinha" },
     { name: "Tostas de centeio + queijo flamengo", prep: "preparar 2\u20133 tostas com queijo numa caixinha" }
   ];
+  var SMOKE_TIPS = [
+    "A vontade passa em 3\u20135 minutos. Respire fundo ou beba um copo de \xE1gua entretanto.",
+    "Mude o ritual: depois de comer, levante-se e lave os dentes ou fa\xE7a um ch\xE1.",
+    "Ocupe as m\xE3os e a boca: pastilha sem a\xE7\xFAcar, palitos de cenoura, uma ch\xE1vena de ch\xE1.",
+    "Caf\xE9 e \xE1lcool puxam o cigarro \u2014 nesses momentos tenha um plano B pronto.",
+    "Caminhar 10 minutos corta a vontade de fumar e a fome ao mesmo tempo.",
+    "Cada cigarro a menos conta. N\xE3o \xE9 tudo ou nada.",
+    'Adie: "s\xF3 fumo daqui a 15 minutos". Muitas vezes a vontade j\xE1 passou.'
+  ];
   var DETOX_NOTE = 'Sobre "detox": quem desintoxica o corpo s\xE3o o f\xEDgado e os rins. Estes ch\xE1s n\xE3o queimam gordura sozinhos. Ajudam porque hidratam, aliviam o incha\xE7o e substituem cerveja, refrigerantes e sumos a\xE7ucarados \u2014 e isso faz muita diferen\xE7a.';
   var ing = (q, i, c) => ({ q, i, c });
   var RECIPES = [
@@ -2628,6 +2637,29 @@
   }
   var pad = (n) => String(n).padStart(2, "0");
   var dkey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  function smokeHours(state2, now = /* @__PURE__ */ new Date()) {
+    const log = state2.smokeLog || {}, cnt = {};
+    let total = 0;
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      for (const t of log[dkey(d)] || []) {
+        const h = new Date(t).getHours();
+        cnt[h] = (cnt[h] || 0) + 1;
+        total++;
+      }
+    }
+    if (total < 15) return { learned: false, hours: (state2.settings.tabacoHoras || "07:30,13:30,20:30").split(",").map((x) => x.trim()).filter(Boolean) };
+    const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([h]) => Number(h)).sort((a, b) => a - b);
+    return { learned: true, hours: top.map((h) => `${String(h).padStart(2, "0")}:00`) };
+  }
+  function smokeGoal(state2, date = /* @__PURE__ */ new Date()) {
+    const s = state2.settings;
+    const base = Number(s.tabacoMeta) || 0;
+    if (!s.tabacoReduzir || !s.tabacoInicio) return base;
+    const weeks = Math.floor((date - /* @__PURE__ */ new Date(s.tabacoInicio + "T00:00:00")) / (7 * 864e5));
+    return Math.max(0, base - Math.max(0, weeks) * Number(s.tabacoReduzir));
+  }
   function isVacation(state2, date = /* @__PURE__ */ new Date()) {
     const s = state2.settings;
     if (s.feriasModo === "on") return true;
@@ -2734,6 +2766,13 @@
           push({ id: base + 52, title: "\u{1F961} Preparar os snacks de amanh\xE3", body: `Manh\xE3: ${a1.name}. Tarde: ${a2.name}. Preparar: ${a1.prep}${a2.prep !== a1.prep ? `; ${a2.prep}` : ""}. Toque para ver o menu de amanh\xE3.`, channelId: "chas", extra: { kind: "snack" }, schedule: { at: at(day, s.snackPrep) } });
         }
       }
+      if (s.notifTabaco) {
+        smokeHours(state2, day).hours.forEach((h, n) => {
+          const w = at(day, h);
+          w.setMinutes(w.getMinutes() - 10);
+          push({ id: base + 60 + n, title: "\u{1F6AD} Costuma fumar por esta hora", body: "Experimente antes: um ch\xE1, 10 min a andar ou 2 min a respirar. A vontade passa em 3\u20135 min.", channelId: "chas", extra: { kind: "tabaco" }, schedule: { at: w } });
+        });
+      }
       if (s.notifChas) {
         push({ id: base + 30, title: "\u{1F375} Ch\xE1", body: vac ? "Ch\xE1 verde, gengibre ou moringa \u2014 sem a\xE7\xFAcar." : "Ch\xE1 verde, gengibre ou moringa \u2014 sem a\xE7\xFAcar.", channelId: "chas", extra: { kind: "cha" }, schedule: { at: at(day, s.chaManha) } });
         push({ id: base + 31, title: "\u{1F33F} Infus\xE3o da noite", body: "Camomila, erva-pr\xEDncipe ou funcho. Ajuda a dormir e a desinchar.", channelId: "chas", extra: { kind: "cha" }, schedule: { at: at(day, s.chaNoite) } });
@@ -2814,6 +2853,12 @@
     chaNoite: "21:15",
     metaPeso: "",
     voz: true,
+    tabaco: true,
+    notifTabaco: true,
+    tabacoMeta: 10,
+    tabacoReduzir: 1,
+    tabacoInicio: "",
+    tabacoHoras: "07:30,13:30,20:30",
     notifSnack: true,
     snackManha: "10:30",
     snackTarde: "16:00",
@@ -2858,7 +2903,8 @@
       alc: s.alc || migrateBeer(s.beer || {}),
       log: s.log || {},
       shop: s.shop || { sel: [], checked: {} },
-      menu: s.menu || {}
+      menu: s.menu || {},
+      smokeLog: s.smokeLog || {}
     };
   }
   var state = load();
@@ -3140,6 +3186,13 @@
     <section class="card"><h2>\u{1F377} \xC1lcool <span class="right ${bw > s.metaCerveja ? "bad" : ""}">${bw} / ${s.metaCerveja} bebidas esta semana</span></h2>
       ${alcRow("c", "\u{1F37A}", "Cerveja (330 ml)")}${alcRow("v", "\u{1F377}", "Vinho (copo 150 ml)")}${alcRow("o", "\u{1F943}", "Destilado (dose 40 ml)")}
       <p class="muted small">\u{1F4A1} ${tip}</p></section>
+    ${state.settings.tabaco ? (() => {
+      const n = smokeToday(), g = smokeGoal(state), sl = sinceLast();
+      return `<section class="card"><h2>\u{1F6AD} Tabaco <span class="right ${n > g ? "bad" : ""}">${n} / ${g} hoje</span></h2>
+      <div class="bar-wrap"><div class="bar-fill ${n > g ? "over" : ""}" style="width:${g ? Math.min(100, Math.round(n / g * 100)) : 100}%"></div></div>
+      <div class="row"><button class="btn sm ghost" data-act="smokeMinus">\u22121</button><button class="btn sm" data-act="smokePlus">+1 cigarro</button><button class="btn sm ghost" data-act="breathe">\u{1F32C}\uFE0F Respirar 2 min</button></div>
+      <p class="muted small">${sl ? `\xDAltimo h\xE1 <b>${sl}</b>. ` : ""}\u{1F4A1} ${SMOKE_TIPS[(/* @__PURE__ */ new Date()).getDate() % SMOKE_TIPS.length]}</p></section>`;
+    })() : ""}
     <section class="card tea"><h2>\u{1F375} Sugest\xE3o para agora</h2><b>${tea.name}</b><p class="small">${tea.good}</p><p class="muted small">${tea.how}</p></section>`;
   }
   function vTreino() {
@@ -3226,6 +3279,11 @@
     ${ck.length ? `<details><summary>Registos</summary>${ck.slice().reverse().map((k) => `<div class="hist"><span>${fmtShort(k)}</span><span>${num(state.waist[k])} cm <button class="link" data-del="waist|${k}">apagar</button></span></div>`).join("")}</details>` : ""}
   </section>
   <section class="card"><h2>\u{1F4A7} \xC1gua \u2014 \xFAltimos 7 dias (L)</h2>${barChart(waterBars, { goal: s.metaAgua / 1e3 })}</section>
+  ${state.settings.tabaco ? `<section class="card"><h2>\u{1F6AD} Cigarros por dia</h2>${barChart(Array.from({ length: 14 }, (_, i) => {
+      const d = addDays(/* @__PURE__ */ new Date(), i - 13);
+      const v = smokeToday(dkey2(d));
+      return { v, label: i % 2 ? "" : fmtShort(dkey2(d)).slice(0, 2), over: v > smokeGoal(state, d) };
+    }), { goal: smokeGoal(state) })}<p class="muted small">\xDAltimos 14 dias. A linha \xE9 a meta de hoje (${smokeGoal(state)}).</p></section>` : ""}
   <section class="card"><h2>\u{1F377} Bebidas alco\xF3licas por semana</h2>${barChart(beerBars, { goal: s.metaCerveja })}<p class="muted small">A linha \xE9 a sua meta semanal (${s.metaCerveja}).</p></section>`;
   }
   var recCat = (r) => /^(Lanche|Petisco|Pós-treino)/.test(r.meal) ? "lanche" : /Pequeno-almoço/.test(r.meal) ? "pa" : "main";
@@ -3334,6 +3392,7 @@
     if (n.kind === "snack") return `<button class="btn sm ghost" data-goto="menu">Ver menu</button>`;
     if (n.kind === "peso" || n.kind === "cintura") return `<button class="btn sm ghost" data-goto="hoje">Registar</button>`;
     if (n.kind === "cerveja") return `<button class="btn sm ghost" data-goto="hoje">Contador</button>`;
+    if (n.kind === "tabaco") return `<button class="btn sm ghost" data-act="breathe">\u{1F32C}\uFE0F Respirar</button>`;
     if (n.kind === "cha") return `<button class="btn sm ghost" data-goto="chas">Ver ch\xE1s</button>`;
     return "";
   }
@@ -3388,6 +3447,12 @@
     ${tg("notifChas", "\u{1F375} Ch\xE1s")}${tm("chaManha", "Ch\xE1 da manh\xE3")}${tm("chaNoite", "Infus\xE3o da noite")}
     <p class="muted small">${lastSched ? lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? " (pr\xE9-visualiza\xE7\xE3o web)" : ""}${lastSched.warning ? " \u2014 sem permiss\xE3o de alarme exato, podem atrasar" : ""}.` : ""}</p>
     <button class="btn" data-act="test">Enviar notifica\xE7\xE3o de teste (5 s)</button></section>
+  <section class="card"><h2>\u{1F6AD} Tabaco</h2>${tg("tabaco", "Contador de tabaco")}${nm("tabacoMeta", "Meta inicial (cigarros/dia)")}${nm("tabacoReduzir", "Reduzir por semana (cigarros)")}
+    ${tg("notifTabaco", "Avisos nas horas habituais")}<label class="fld"><span>Horas (at\xE9 aprender)</span><input type="text" data-set="tabacoHoras" value="${s.tabacoHoras}"></label>
+    <p class="muted small">Meta de hoje: <b>${smokeGoal(state)}</b>. ${(() => {
+      const h = smokeHours(state);
+      return h.learned ? `Horas aprendidas com os seus registos: ${h.hours.join(", ")}.` : `Depois de 15 registos a app passa a usar as suas horas reais. Por agora: ${h.hours.join(", ")}.`;
+    })()}</p></section>
   <section class="card"><h2>\u{1F50A} Treinador</h2>${tg("voz", "Voz durante o treino")}${nm("pausaDificil", "Pausa \xB7 exerc\xEDcios dif\xEDceis (s)", 5)}${nm("pausaLeve", "Pausa \xB7 exerc\xEDcios leves (s)", 5)}${nm("pausaCore", "Pausa \xB7 core (s)", 5)}${nm("pausaPar", "Pausa no fim de cada par (s)", 5)}${nm("pausaTroca", "Troca dentro do par (s)", 5)}<p class="muted small">Dif\xEDceis: eleva\xE7\xF5es, remada, flex\xF5es, fundos, press, roda. Core: pranchas, dead bug, hollow, abdominais, eleva\xE7\xF5es de pernas. Leves: o resto. Contagem de s\xE9ries, pausas e intervalos com voz em portugu\xEAs. O ecr\xE3 fica ligado enquanto o temporizador corre.</p>
     <button class="btn ghost sm" data-act="testVoz">Testar voz</button></section>
   <section class="card"><h2>\u{1F3D6}\uFE0F Modo f\xE9rias</h2>
@@ -3415,6 +3480,23 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     <p class="muted small">${status.error ? `N\xE3o foi poss\xEDvel verificar (${status.error}).` : status.apkUrl ? "H\xE1 uma APK nova \u2014 use o aviso no topo." : status.pending ? "Atualiza\xE7\xE3o descarregada; aplica-se ao reabrir a app." : status.lastCheck ? "Est\xE1 atualizado." : "A app verifica sozinha sempre que \xE9 aberta."}</p>
     <button class="btn ghost sm" data-act="checkUpd">Verificar agora</button></section>
   <p class="muted small center">KillBelly \xB7 os dados ficam s\xF3 no seu telem\xF3vel.</p>`;
+  }
+  var smokeToday = (k = dkey2()) => (state.smokeLog[k] || []).length;
+  function sinceLast() {
+    const all = Object.values(state.smokeLog).flat();
+    if (!all.length) return null;
+    const m = Math.floor((Date.now() - Math.max(...all)) / 6e4);
+    return m < 60 ? `${m} min` : m < 1440 ? `${Math.floor(m / 60)} h ${pad2(m % 60)}` : `${Math.floor(m / 1440)} dia(s)`;
+  }
+  function breathe() {
+    const steps2 = [{ kind: "prep", label: "Respira\xE7\xE3o \xB7 2 minutos", sec: 5, say: "Vamos respirar durante dois minutos. Ombros soltos." }];
+    for (let i = 0; i < 12; i++) {
+      steps2.push({ kind: "work", label: `Inspire pelo nariz \xB7 ${i + 1}/12`, sec: 4, say: "Inspire" });
+      steps2.push({ kind: "rest", label: `Expire devagar pela boca \xB7 ${i + 1}/12`, sec: 6, say: "Expire" });
+    }
+    run(steps2, (ok) => {
+      if (ok) say("Muito bem. A vontade costuma passar. Beba um copo de \xE1gua.");
+    });
   }
   function sesOf(k, slot) {
     return SESSIONS[profile(state, fromKey(k)).week[fromKey(k).getDay()][slot].s];
@@ -3719,6 +3801,24 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
       case "test":
         await testNotification();
         break;
+      case "smokePlus": {
+        const k = dkey2();
+        (state.smokeLog[k] = state.smokeLog[k] || []).push(Date.now());
+        if (!state.settings.tabacoInicio) state.settings.tabacoInicio = k;
+        save(true);
+        render();
+        break;
+      }
+      case "smokeMinus": {
+        const k = dkey2();
+        if ((state.smokeLog[k] || []).length) state.smokeLog[k].pop();
+        save();
+        render();
+        break;
+      }
+      case "breathe":
+        breathe();
+        break;
       case "okUpd":
         updatedInfo = null;
         render();
@@ -3817,6 +3917,12 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     const n = a.notification, extra = n.extra || {};
     if (extra.kind === "apk") {
       openApk();
+      return;
+    }
+    if (extra.kind === "tabaco") {
+      tab = "hoje";
+      render();
+      breathe();
       return;
     }
     if (extra.kind === "snack") {

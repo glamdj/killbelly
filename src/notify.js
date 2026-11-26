@@ -68,6 +68,26 @@ export async function openExactAlarmSettings() {
 // ---------- Perfil ativo (normal ou férias) ----------
 const pad = (n) => String(n).padStart(2, '0');
 const dkey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+// Horas em que costuma fumar (aprende com os registos dos últimos 14 dias)
+export function smokeHours(state, now = new Date()) {
+  const log = state.smokeLog || {}, cnt = {};
+  let total = 0;
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    for (const t of log[dkey(d)] || []) { const h = new Date(t).getHours(); cnt[h] = (cnt[h] || 0) + 1; total++; }
+  }
+  if (total < 15) return { learned: false, hours: (state.settings.tabacoHoras || '07:30,13:30,20:30').split(',').map((x) => x.trim()).filter(Boolean) };
+  const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([h]) => Number(h)).sort((a, b) => a - b);
+  return { learned: true, hours: top.map((h) => `${String(h).padStart(2, '0')}:00`) };
+}
+export function smokeGoal(state, date = new Date()) {
+  const s = state.settings;
+  const base = Number(s.tabacoMeta) || 0;
+  if (!s.tabacoReduzir || !s.tabacoInicio) return base;
+  const weeks = Math.floor((date - new Date(s.tabacoInicio + 'T00:00:00')) / (7 * 864e5));
+  return Math.max(0, base - Math.max(0, weeks) * Number(s.tabacoReduzir));
+}
+
 export function isVacation(state, date = new Date()) {
   const s = state.settings;
   if (s.feriasModo === 'on') return true;
@@ -156,6 +176,12 @@ export function buildNotifications(state, from = new Date(), { startDay = null, 
         const [a1, a2] = snacksFor(tmr);
         push({ id: base + 52, title: '🥡 Preparar os snacks de amanhã', body: `Manhã: ${a1.name}. Tarde: ${a2.name}. Preparar: ${a1.prep}${a2.prep !== a1.prep ? `; ${a2.prep}` : ''}. Toque para ver o menu de amanhã.`, channelId: 'chas', extra: { kind: 'snack' }, schedule: { at: at(day, s.snackPrep) } });
       }
+    }
+    if (s.notifTabaco) {
+      smokeHours(state, day).hours.forEach((h, n) => {
+        const w = at(day, h); w.setMinutes(w.getMinutes() - 10);
+        push({ id: base + 60 + n, title: '🚭 Costuma fumar por esta hora', body: 'Experimente antes: um chá, 10 min a andar ou 2 min a respirar. A vontade passa em 3–5 min.', channelId: 'chas', extra: { kind: 'tabaco' }, schedule: { at: w } });
+      });
     }
     if (s.notifChas) {
       push({ id: base + 30, title: '🍵 Chá', body: vac ? 'Chá verde, gengibre ou moringa — sem açúcar.' : 'Chá verde, gengibre ou moringa — sem açúcar.', channelId: 'chas', extra: { kind: 'cha' }, schedule: { at: at(day, s.chaManha) } });

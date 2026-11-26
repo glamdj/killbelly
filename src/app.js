@@ -1,9 +1,9 @@
-import { DEFAULT_WEEK_FERIAS, SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, ALC_TIPS, SNACKS } from './data.js';
+import { DEFAULT_WEEK_FERIAS, SESSIONS, DAY_NAMES, DEFAULT_WEEK, TEAS, DETOX_NOTE, RECIPES, CAT_NAMES, ALC_TIPS, SNACKS, SMOKE_TIPS } from './data.js';
 import { animFor, ANIMS, startAnimLoop } from './anims.js';
 import { run as coachRun, say, setVoice } from './coach.js';
 import { status as upd, appReady, checkUpdates, applyNow, openApk, justUpdated } from './updater.js';
 let updatedInfo = justUpdated();
-import { notificationFeed, profile, isVacation, snacksFor, setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
+import { smokeHours, smokeGoal, notificationFeed, profile, isVacation, snacksFor, setupNotifications, rescheduleAll, testNotification, exactAlarmStatus, openExactAlarmSettings, onAction, isNative } from './notify.js';
 
 // ---------- Estado ----------
 const KEY = 'killbelly.v1';
@@ -14,7 +14,7 @@ const DEFAULT_SETTINGS = {
   notifPeso: true, pesoHora: '05:05', cinturaDia: 1,
   notifCerveja: true, cervejaHora: '17:30', cervejaSabado: '13:30', metaCerveja: 10,
   notifChas: true, chaManha: '10:00', chaNoite: '21:15',
-  metaPeso: '', voz: true, notifSnack: true, snackManha: '10:30', snackTarde: '16:00', snackPrep: '20:00', vSnackTarde: '16:30', pausaDificil: 60, pausaLeve: 40, pausaCore: 25, pausaPar: 45, pausaTroca: 10,
+  metaPeso: '', voz: true, tabaco: true, notifTabaco: true, tabacoMeta: 10, tabacoReduzir: 1, tabacoInicio: '', tabacoHoras: '07:30,13:30,20:30', notifSnack: true, snackManha: '10:30', snackTarde: '16:00', snackPrep: '20:00', vSnackTarde: '16:30', pausaDificil: 60, pausaLeve: 40, pausaCore: 25, pausaPar: 45, pausaTroca: 10,
   feriasModo: 'auto', feriasInicio: '2026-12-17', feriasFim: '2027-01-08',
   vPeso: '10:15', vAguaInicio: '10:30', vAguaFim: '22:30', vMetaAgua: 2500, vCerveja: '19:30', vChaManha: '16:00', vChaNoite: '23:00',
 };
@@ -30,7 +30,7 @@ function load() {
     weekFerias: s.weekFerias || clone(DEFAULT_WEEK_FERIAS),
     settings: { ...DEFAULT_SETTINGS, ...(s.settings || {}) },
     water: s.water || {}, weight: s.weight || {}, waist: s.waist || {}, alc: s.alc || migrateBeer(s.beer || {}),
-    log: s.log || {}, shop: s.shop || { sel: [], checked: {} }, menu: s.menu || {},
+    log: s.log || {}, shop: s.shop || { sel: [], checked: {} }, menu: s.menu || {}, smokeLog: s.smokeLog || {},
   };
 }
 let state = load();
@@ -269,6 +269,10 @@ function vHoje() {
     <section class="card"><h2>🍷 Álcool <span class="right ${bw > s.metaCerveja ? 'bad' : ''}">${bw} / ${s.metaCerveja} bebidas esta semana</span></h2>
       ${alcRow('c', '🍺', 'Cerveja (330 ml)')}${alcRow('v', '🍷', 'Vinho (copo 150 ml)')}${alcRow('o', '🥃', 'Destilado (dose 40 ml)')}
       <p class="muted small">💡 ${tip}</p></section>
+    ${state.settings.tabaco ? (() => { const n = smokeToday(), g = smokeGoal(state), sl = sinceLast(); return `<section class="card"><h2>🚭 Tabaco <span class="right ${n > g ? 'bad' : ''}">${n} / ${g} hoje</span></h2>
+      <div class="bar-wrap"><div class="bar-fill ${n > g ? 'over' : ''}" style="width:${g ? Math.min(100, Math.round((n / g) * 100)) : 100}%"></div></div>
+      <div class="row"><button class="btn sm ghost" data-act="smokeMinus">−1</button><button class="btn sm" data-act="smokePlus">+1 cigarro</button><button class="btn sm ghost" data-act="breathe">🌬️ Respirar 2 min</button></div>
+      <p class="muted small">${sl ? `Último há <b>${sl}</b>. ` : ''}💡 ${SMOKE_TIPS[new Date().getDate() % SMOKE_TIPS.length]}</p></section>`; })() : ''}
     <section class="card tea"><h2>🍵 Sugestão para agora</h2><b>${tea.name}</b><p class="small">${tea.good}</p><p class="muted small">${tea.how}</p></section>`;
 }
 
@@ -355,6 +359,7 @@ function vProg() {
     ${ck.length ? `<details><summary>Registos</summary>${ck.slice().reverse().map((k) => `<div class="hist"><span>${fmtShort(k)}</span><span>${num(state.waist[k])} cm <button class="link" data-del="waist|${k}">apagar</button></span></div>`).join('')}</details>` : ''}
   </section>
   <section class="card"><h2>💧 Água — últimos 7 dias (L)</h2>${barChart(waterBars, { goal: s.metaAgua / 1000 })}</section>
+  ${state.settings.tabaco ? `<section class="card"><h2>🚭 Cigarros por dia</h2>${barChart(Array.from({ length: 14 }, (_, i) => { const d = addDays(new Date(), i - 13); const v = smokeToday(dkey(d)); return { v, label: i % 2 ? '' : fmtShort(dkey(d)).slice(0, 2), over: v > smokeGoal(state, d) }; }), { goal: smokeGoal(state) })}<p class="muted small">Últimos 14 dias. A linha é a meta de hoje (${smokeGoal(state)}).</p></section>` : ''}
   <section class="card"><h2>🍷 Bebidas alcoólicas por semana</h2>${barChart(beerBars, { goal: s.metaCerveja })}<p class="muted small">A linha é a sua meta semanal (${s.metaCerveja}).</p></section>`;
 }
 
@@ -468,6 +473,7 @@ function notifAction(n) {
   if (n.kind === 'snack') return `<button class="btn sm ghost" data-goto="menu">Ver menu</button>`;
   if (n.kind === 'peso' || n.kind === 'cintura') return `<button class="btn sm ghost" data-goto="hoje">Registar</button>`;
   if (n.kind === 'cerveja') return `<button class="btn sm ghost" data-goto="hoje">Contador</button>`;
+  if (n.kind === 'tabaco') return `<button class="btn sm ghost" data-act="breathe">🌬️ Respirar</button>`;
   if (n.kind === 'cha') return `<button class="btn sm ghost" data-goto="chas">Ver chás</button>`;
   return '';
 }
@@ -515,6 +521,9 @@ function vDef() {
     ${tg('notifChas', '🍵 Chás')}${tm('chaManha', 'Chá da manhã')}${tm('chaNoite', 'Infusão da noite')}
     <p class="muted small">${lastSched ? (lastSched.error ? `Erro ao agendar: ${lastSched.error}` : `${lastSched.count} lembretes agendados${lastSched.web ? ' (pré-visualização web)' : ''}${lastSched.warning ? ' — sem permissão de alarme exato, podem atrasar' : ''}.`) : ''}</p>
     <button class="btn" data-act="test">Enviar notificação de teste (5 s)</button></section>
+  <section class="card"><h2>🚭 Tabaco</h2>${tg('tabaco', 'Contador de tabaco')}${nm('tabacoMeta', 'Meta inicial (cigarros/dia)')}${nm('tabacoReduzir', 'Reduzir por semana (cigarros)')}
+    ${tg('notifTabaco', 'Avisos nas horas habituais')}<label class="fld"><span>Horas (até aprender)</span><input type="text" data-set="tabacoHoras" value="${s.tabacoHoras}"></label>
+    <p class="muted small">Meta de hoje: <b>${smokeGoal(state)}</b>. ${(() => { const h = smokeHours(state); return h.learned ? `Horas aprendidas com os seus registos: ${h.hours.join(', ')}.` : `Depois de 15 registos a app passa a usar as suas horas reais. Por agora: ${h.hours.join(', ')}.`; })()}</p></section>
   <section class="card"><h2>🔊 Treinador</h2>${tg('voz', 'Voz durante o treino')}${nm('pausaDificil', 'Pausa · exercícios difíceis (s)', 5)}${nm('pausaLeve', 'Pausa · exercícios leves (s)', 5)}${nm('pausaCore', 'Pausa · core (s)', 5)}${nm('pausaPar', 'Pausa no fim de cada par (s)', 5)}${nm('pausaTroca', 'Troca dentro do par (s)', 5)}<p class="muted small">Difíceis: elevações, remada, flexões, fundos, press, roda. Core: pranchas, dead bug, hollow, abdominais, elevações de pernas. Leves: o resto. Contagem de séries, pausas e intervalos com voz em português. O ecrã fica ligado enquanto o temporizador corre.</p>
     <button class="btn ghost sm" data-act="testVoz">Testar voz</button></section>
   <section class="card"><h2>🏖️ Modo férias</h2>
@@ -542,6 +551,23 @@ ${tm('vSnackTarde', 'Lanche da tarde')}    ${tm('vCerveja', 'Lembrete antes de b
     <p class="muted small">${upd.error ? `Não foi possível verificar (${upd.error}).` : upd.apkUrl ? 'Há uma APK nova — use o aviso no topo.' : upd.pending ? 'Atualização descarregada; aplica-se ao reabrir a app.' : upd.lastCheck ? 'Está atualizado.' : 'A app verifica sozinha sempre que é aberta.'}</p>
     <button class="btn ghost sm" data-act="checkUpd">Verificar agora</button></section>
   <p class="muted small center">KillBelly · os dados ficam só no seu telemóvel.</p>`;
+}
+
+// ---------- Tabaco ----------
+const smokeToday = (k = dkey()) => (state.smokeLog[k] || []).length;
+function sinceLast() {
+  const all = Object.values(state.smokeLog).flat();
+  if (!all.length) return null;
+  const m = Math.floor((Date.now() - Math.max(...all)) / 60000);
+  return m < 60 ? `${m} min` : m < 1440 ? `${Math.floor(m / 60)} h ${pad(m % 60)}` : `${Math.floor(m / 1440)} dia(s)`;
+}
+function breathe() {
+  const steps = [{ kind: 'prep', label: 'Respiração · 2 minutos', sec: 5, say: 'Vamos respirar durante dois minutos. Ombros soltos.' }];
+  for (let i = 0; i < 12; i++) {
+    steps.push({ kind: 'work', label: `Inspire pelo nariz · ${i + 1}/12`, sec: 4, say: 'Inspire' });
+    steps.push({ kind: 'rest', label: `Expire devagar pela boca · ${i + 1}/12`, sec: 6, say: 'Expire' });
+  }
+  coachRun(steps, (ok) => { if (ok) say('Muito bem. A vontade costuma passar. Beba um copo de água.'); });
 }
 
 // ---------- Treinador ----------
@@ -707,6 +733,9 @@ app.addEventListener('click', async (e) => {
     case 'clearShop': state.shop = { sel: [], checked: {} }; save(); render(); break;
     case 'resetPlan': if (confirm('Repor o plano original?')) { if (planEdit === 'ferias') state.weekFerias = clone(DEFAULT_WEEK_FERIAS); else state.week = clone(DEFAULT_WEEK); save(true); render(); } break;
     case 'test': await testNotification(); break;
+    case 'smokePlus': { const k = dkey(); (state.smokeLog[k] = state.smokeLog[k] || []).push(Date.now()); if (!state.settings.tabacoInicio) state.settings.tabacoInicio = k; save(true); render(); break; }
+    case 'smokeMinus': { const k = dkey(); if ((state.smokeLog[k] || []).length) state.smokeLog[k].pop(); save(); render(); break; }
+    case 'breathe': breathe(); break;
     case 'okUpd': updatedInfo = null; render(); break;
     case 'apk': openApk(); break;
     case 'applyUpd': await applyNow(); break;
@@ -753,6 +782,7 @@ app.addEventListener('change', (e) => {
 onAction((a) => {
   const n = a.notification, extra = n.extra || {};
   if (extra.kind === 'apk') { openApk(); return; }
+  if (extra.kind === 'tabaco') { tab = 'hoje'; render(); breathe(); return; }
   if (extra.kind === 'snack') { tab = 'nutri'; nutriTab = 'menu'; menuDay = new Date().getHours() >= 15 ? 'amanha' : 'hoje'; render(); return; }
   if (a.actionId === 'drink') addWater(state.settings.copoMl);
   else if (a.actionId === 'done' && extra.slot) {

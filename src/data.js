@@ -277,6 +277,16 @@ export const SNACKS = [
   { name: 'Tostas de centeio + queijo flamengo', prep: 'preparar 2–3 tostas com queijo numa caixinha' },
 ];
 
+export const SMOKE_TIPS = [
+  'A vontade passa em 3–5 minutos. Respire fundo ou beba um copo de água entretanto.',
+  'Mude o ritual: depois de comer, levante-se e lave os dentes ou faça um chá.',
+  'Ocupe as mãos e a boca: pastilha sem açúcar, palitos de cenoura, uma chávena de chá.',
+  'Café e álcool puxam o cigarro — nesses momentos tenha um plano B pronto.',
+  'Caminhar 10 minutos corta a vontade de fumar e a fome ao mesmo tempo.',
+  'Cada cigarro a menos conta. Não é tudo ou nada.',
+  'Adie: "só fumo daqui a 15 minutos". Muitas vezes a vontade já passou.',
+];
+
 export const DETOX_NOTE =
   'Sobre "detox": quem desintoxica o corpo são o fígado e os rins. Estes chás não queimam gordura sozinhos. Ajudam porque hidratam, aliviam o inchaço e substituem cerveja, refrigerantes e sumos açucarados — e isso faz muita diferença.';
 
