@@ -3047,6 +3047,7 @@
   var recTab = "refeicoes";
   var menuDay = null;
   var viewDay = null;
+  var treinoDay = null;
   var curKey = () => viewDay && viewDay < dkey2() ? viewDay : dkey2();
   var tab = "hoje";
   var nutriTab = "menu";
@@ -3206,6 +3207,7 @@
   }
   function vTreino() {
     const today = /* @__PURE__ */ new Date();
+    const selK = treinoDay || dkey2(today);
     const order = [1, 2, 3, 4, 5, 6, 0];
     const opts = (sel) => Object.entries(SESSIONS).map(([id, s]) => `<option value="${id}" ${id === sel ? "selected" : ""}>${s.title}</option>`).join("");
     let cells = "";
@@ -3213,7 +3215,7 @@
     for (let i = 0; i < 28; i++) {
       const d = addDays(start, i), k = dkey2(d), l = state.log[k] || {};
       const c = (l.am && l.am.done ? 1 : 0) + (l.pm && l.pm.done ? 1 : 0);
-      cells += `<div class="cell c${c} ${k === dkey2() ? "today" : ""} ${d > today ? "fut" : ""}" title="${fmtShort(k)}" ${d > today ? "" : `data-gotoday="${k}"`}>${d.getDate()}</div>`;
+      cells += `<div class="cell c${c} ${k === dkey2() ? "today" : ""} ${d > today ? "fut" : ""} ${k === selK ? "sel" : ""}" title="${fmtShort(k)}" data-tday="${k}">${d.getDate()}</div>`;
     }
     let weekDone = 0, weekPlanned = 0;
     for (let i = 0; i < 7; i++) {
@@ -3228,7 +3230,14 @@
   <section class="card"><h2>Esta semana <span class="right">${weekDone} / ${weekPlanned} sess\xF5es</span></h2>
     <div class="bar-wrap"><div class="bar-fill" style="width:${weekPlanned ? Math.round(weekDone / weekPlanned * 100) : 0}%"></div></div>
     <div class="cal">${["S", "T", "Q", "Q", "S", "S", "D"].map((x) => `<div class="cal-h">${x}</div>`).join("")}${cells}</div>
-    <p class="muted small">\xDAltimas 4 semanas \xB7 verde claro = 1 sess\xE3o, verde escuro = 2.</p></section>
+    <p class="muted small">Toque num dia para ver ou registar o treino. Verde claro = 1 sess\xE3o, verde escuro = 2.</p></section>
+  ${(() => {
+      const sd = fromKey(selK), isFut = selK > dkey2(), cfgD = profile(state, sd).week[sd.getDay()];
+      const lbl = selK === dkey2() ? "hoje" : selK === dkey2(addDays(/* @__PURE__ */ new Date(), -1)) ? "ontem" : `${DAY_NAMES[sd.getDay()].toLowerCase()}, ${fmtShort(selK)}`;
+      return `<section class="card"><h2>Treino de ${lbl}</h2>${isFut ? '<p class="muted small">Dia futuro: s\xF3 para consulta.</p>' : ""}
+      ${sessionCard(selK, "am", cfgD.am, !isFut)}${sessionCard(selK, "pm", cfgD.pm, !isFut)}
+      ${!isFut && selK !== dkey2() ? `<button class="btn ghost sm" data-gotoday="${selK}">Abrir o dia completo (\xE1gua, peso\u2026)</button>` : ""}</section>`;
+    })()}
   <section class="card"><h2>Plano semanal</h2>
     <div class="seg">${[["normal", "Normal (Lubango)"], ["ferias", "\u{1F3D6}\uFE0F F\xE9rias"]].map(([id, l]) => `<button data-plan="${id}" class="${(planEdit || (isVacation(state) ? "ferias" : "normal")) === id ? "on" : ""}">${l}${(isVacation(state) ? "ferias" : "normal") === id ? " \xB7 ativo" : ""}</button>`).join("")}</div>
     <p class="muted small">Toque num dia para editar a sess\xE3o ou a hora. Os alarmes atualizam-se sozinhos.</p>
@@ -3669,7 +3678,7 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     });
   }
   app.addEventListener("click", async (e) => {
-    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided],[data-swap],[data-shopday],[data-menuday],[data-rectab],[data-goto],[data-day],[data-gotoday]");
+    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided],[data-swap],[data-shopday],[data-menuday],[data-rectab],[data-goto],[data-day],[data-gotoday],[data-tday]");
     if (!t) return;
     const d = t.dataset;
     if (d.tab) {
@@ -3681,6 +3690,11 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     }
     if (d.day !== void 0) {
       shiftDay(Number(d.day));
+      return;
+    }
+    if (d.tday) {
+      treinoDay = d.tday === dkey2() ? null : d.tday;
+      render();
       return;
     }
     if (d.gotoday) {
