@@ -464,14 +464,21 @@ function vNutri() {
         agg[ing.c][ing.i].push(ing.q);
       }
     }
-    const cats = Object.keys(CAT_NAMES).filter((c) => agg[c]);
-    body = !state.shop.sel.length ? `<p class="muted">A lista está vazia. Vá a <b>Receitas</b> e toque em "+ Lista de compras".</p>` :
-      `<p class="muted small">Receitas: ${state.shop.sel.map((id) => RECIPES.find((r) => r.id === id)?.name).filter(Boolean).join(', ')}</p>` +
-      cats.map((c) => `<section class="card"><h3>${CAT_NAMES[c]}</h3>${Object.entries(agg[c]).sort().map(([item, qs]) => {
+    const rm = state.shop.removed || {};
+    const cats = Object.keys(CAT_NAMES).filter((c) => agg[c] && Object.keys(agg[c]).some((i) => !rm[`${c}|${i}`]));
+    const total = Object.keys(CAT_NAMES).reduce((n, c) => n + (agg[c] ? Object.keys(agg[c]).length : 0), 0);
+    const nRm = Object.keys(CAT_NAMES).reduce((n, c) => n + (agg[c] ? Object.keys(agg[c]).filter((i) => rm[`${c}|${i}`]).length : 0), 0);
+    const nChk = Object.keys(CAT_NAMES).reduce((n, c) => n + (agg[c] ? Object.keys(agg[c]).filter((i) => state.shop.checked[`${c}|${i}`] && !rm[`${c}|${i}`]).length : 0), 0);
+    body = !state.shop.sel.length ? `<p class="muted">A lista está vazia. Vá a <b>Receitas</b> ou ao <b>Menu</b> e toque em "+ Lista de compras".</p>` :
+      `<p class="muted small">Receitas: ${state.shop.sel.map((id) => RECIPES.find((r) => r.id === id)?.name).filter(Boolean).join(', ')}</p>
+      <p class="muted small">👉 Deslize o dedo sobre um item para o riscar e tirar da lista. Faltam <b>${total - nRm}</b> de ${total}.</p>` +
+      cats.map((c) => `<section class="card"><h3>${CAT_NAMES[c]}</h3>${Object.entries(agg[c]).sort().filter(([item]) => !rm[`${c}|${item}`]).map(([item, qs]) => {
         const key = `${c}|${item}`;
-        return `<label class="chk"><input type="checkbox" data-buy="${key}" ${state.shop.checked[key] ? 'checked' : ''}><span>${item} <span class="muted">— ${qs.join(' + ')}</span></span></label>`;
+        return `<div class="buy ${state.shop.checked[key] ? 'struck' : ''}" data-bkey="${key}"><label class="chk"><input type="checkbox" data-buy="${key}" ${state.shop.checked[key] ? 'checked' : ''}><span>${item} <span class="muted">— ${qs.join(' + ')}</span></span></label></div>`;
       }).join('')}</section>`).join('') +
-      `<button class="btn ghost" data-act="clearShop">Limpar lista</button>`;
+      (total - nRm === 0 ? '<p class="center">🎉 Já tem tudo!</p>' : '') +
+      `<div class="row">${nChk ? `<button class="btn sm" data-act="clearChecked">🧹 Limpar selecionados (${nChk})</button>` : ''}${nRm ? `<button class="btn sm ghost" data-act="restoreShop">↩️ Repor removidos (${nRm})</button>` : ''}</div>
+      <button class="btn ghost" data-act="clearShop">Limpar lista toda</button>`;
   }
   return `<header><h1>Nutrição</h1></header><div class="seg">${Object.entries(sub).map(([id, l]) => `<button data-nutri="${id}" class="${nutriTab === id ? 'on' : ''}">${l}${id === 'compras' && state.shop.sel.length ? ` (${state.shop.sel.length})` : ''}</button>`).join('')}</div>${body}`;
 }
@@ -750,7 +757,9 @@ app.addEventListener('click', async (e) => {
       if (v > 40 && v < 250) { state.waist[curKey()] = v; save(); render(); }
       break;
     }
-    case 'clearShop': state.shop = { sel: [], checked: {} }; save(); render(); break;
+    case 'clearShop': if (confirm('Apagar a lista de compras toda?')) { state.shop = { sel: [], checked: {}, removed: {} }; save(); render(); } break;
+    case 'clearChecked': { state.shop.removed = state.shop.removed || {}; for (const [k2, v] of Object.entries(state.shop.checked)) if (v) state.shop.removed[k2] = true; save(); render(); break; }
+    case 'restoreShop': state.shop.removed = {}; state.shop.checked = {}; save(); render(); break;
     case 'resetPlan': if (confirm('Repor o plano original?')) { if (planEdit === 'ferias') state.weekFerias = clone(DEFAULT_WEEK_FERIAS); else state.week = clone(DEFAULT_WEEK); save(true); render(); } break;
     case 'test': await testNotification(); break;
     case 'smokePlus': { const k = curKey(); (state.smokeLog[k] = state.smokeLog[k] || []).push(k === dkey() ? Date.now() : 0); if (!state.settings.tabacoInicio) state.settings.tabacoInicio = k; save(true); render(); break; }
@@ -781,6 +790,30 @@ function shiftDay(n) {
   else { const nk = dkey(addDays(fromKey(curKey()), n)); viewDay = nk >= today ? null : nk; }
   render(); window.scrollTo(0, 0);
 }
+// Lista de compras: deslizar um item risca-o e tira-o da lista
+let sw = null;
+app.addEventListener('touchstart', (e) => {
+  const el = e.target.closest('.buy'); if (!el) { sw = null; return; }
+  sw = { el, x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, h: false };
+}, { passive: true });
+app.addEventListener('touchmove', (e) => {
+  if (!sw) return;
+  const dx = e.touches[0].clientX - sw.x, dy = e.touches[0].clientY - sw.y;
+  if (!sw.h && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }
+  if (Math.abs(dx) > 10) sw.h = true;
+  sw.dx = dx; sw.el.style.transition = 'none'; sw.el.style.transform = `translateX(${dx}px)`; sw.el.style.opacity = String(Math.max(0.3, 1 - Math.abs(dx) / 300));
+}, { passive: true });
+app.addEventListener('touchend', () => {
+  if (!sw) return;
+  const { el, dx } = sw; sw = null; el.style.transition = '';
+  if (Math.abs(dx) < 80) { el.style.transform = ''; el.style.opacity = ''; return; }
+  const key = el.dataset.bkey;
+  el.classList.add('struck'); el.style.transform = ''; el.style.opacity = '';
+  state.shop.checked[key] = true;
+  setTimeout(() => { el.style.transform = `translateX(${dx > 0 ? 110 : -110}%)`; el.style.opacity = '0'; }, 700);
+  setTimeout(() => { state.shop.removed = state.shop.removed || {}; state.shop.removed[key] = true; save(); render(); }, 1150);
+}, { passive: true });
+
 // Deslizar o dedo no ecrã Hoje para mudar de dia
 let tx = null, ty = null;
 app.addEventListener('touchstart', (e) => { if (tab !== 'hoje' || e.target.closest('input,select,textarea,#coach')) { tx = null; return; } tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
@@ -800,7 +833,7 @@ app.addEventListener('change', (e) => {
     if (l.checks.length === SESSIONS[l.s].items.length) l.done = true;
     save(); render();
   } else if (d.buy) {
-    state.shop.checked[d.buy] = t.checked; save();
+    state.shop.checked[d.buy] = t.checked; save(); render();
   } else if (d.planT) {
     const [day, sl] = d.planT.split('|'); planWeek()[day][sl].t = t.value; save(true); render();
   } else if (d.planS) {
