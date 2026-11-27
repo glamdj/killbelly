@@ -61,8 +61,7 @@ const num = (v, dec = 1) => Number(v).toFixed(dec).replace('.', ',');
 
 // ---------- Lógica ----------
 const waterToday = () => state.water[dkey()] || 0;
-function addWater(ml) {
-  const k = dkey();
+function addWater(ml, k = dkey()) {
   state.water[k] = Math.max(0, (state.water[k] || 0) + ml);
   save();
 }
@@ -133,7 +132,8 @@ function barChart(bars, { goal = null, h = 130 } = {}) {
 // ---------- UI ----------
 let planEdit = null;
 const planWeek = () => ((planEdit || (isVacation(state) ? 'ferias' : 'normal')) === 'ferias' ? state.weekFerias : state.week);
-let recTab = 'refeicoes', menuDay = null;
+let recTab = 'refeicoes', menuDay = null, viewDay = null;
+const curKey = () => (viewDay && viewDay < dkey() ? viewDay : dkey());
 let tab = 'hoje', nutriTab = 'menu', open = {}, exactStatus = 'granted', notifOk = true;
 const app = document.getElementById('app');
 const TABS = [
@@ -230,37 +230,46 @@ function banners() {
 }
 
 function vHoje() {
-  const now = new Date(), k = dkey(now), pr = profile(state, now), cfg = pr.week[now.getDay()];
+  const real = new Date(), k = curKey(), isToday = k === dkey(real);
+  const now = isToday ? real : new Date(fromKey(k).setHours(12));
+  const pr = profile(state, now), cfg = pr.week[now.getDay()];
   const s = pr.s;
-  const w = waterToday(), pct = Math.min(100, Math.round((w / s.metaAgua) * 100));
-  const hr = now.getHours();
+  const w = state.water[k] || 0, pct = Math.min(100, Math.round((w / s.metaAgua) * 100));
+  const hr = real.getHours();
+  const yday = dkey(addDays(real, -1)) === k;
+  const dayTitle = isToday ? 'Hoje' : yday ? 'Ontem' : DAY_NAMES[now.getDay()];
+  const daySub = `${isToday || yday ? `${DAY_NAMES[now.getDay()]}, ` : ''}${now.getDate()} de ${MONTHS[now.getMonth()]}${now.getFullYear() !== real.getFullYear() ? ` de ${now.getFullYear()}` : ''}`;
   const greet = hr < 12 ? 'Bom dia' : hr < 19 ? 'Boa tarde' : 'Boa noite';
   const wt = state.weight[k];
   const prevKeys = sortedKeys(state.weight).filter((x) => x < k);
   const last = prevKeys.length ? state.weight[prevKeys[prevKeys.length - 1]] : null;
   const a7 = avg7(k), a7prev = avg7(dkey(addDays(now, -7)));
-  const monday = dkey(mondayOf());
+  const monday = dkey(mondayOf(now));
   const waistThisWeek = sortedKeys(state.waist).filter((x) => x >= monday);
   const showWaist = now.getDay() === Number(s.cinturaDia) || !waistThisWeek.length;
-  const bw = beerWeek(), at = state.alc[k] || {};
+  const bw = beerWeek(mondayOf(now)), at = state.alc[k] || {};
   const tip = ALC_TIPS[now.getDate() % ALC_TIPS.length];
   const alcRow = (t, ic, l) => `<div class="alc-r"><span>${ic} ${l}</span><button class="btn sm ghost" data-alc="${t}|-1">−</button><b>${at[t] || 0}</b><button class="btn sm" data-alc="${t}|1">+</button></div>`;
   const tea = hr < 12 ? TEAS[0] : hr < 16 ? TEAS[6] : hr < 19 ? TEAS[10] : TEAS[hr < 21 ? 5 : 4];
   const st = streak();
-  return `<header><div><h1>${greet}, ${s.nome}</h1><div class="muted">${DAY_NAMES[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]}</div></div>
+  return `<header><div><h1>${greet}, ${s.nome}</h1></div>
     <div class="hdr-r"><button class="bell" data-tab="notifs" aria-label="Notificações">🔔${unreadCount() ? `<span class="badge">${unreadCount()}</span>` : ''}</button><div class="streak" title="Dias seguidos com treino">🔥 ${st}</div></div></header>
-    ${banners()}${pr.vac ? `<div class="vac">🏖️ Modo férias${s.feriasModo === 'auto' && s.feriasFim ? ` até ${fmtShort(s.feriasFim)}` : ''} — durma bem, o treino é ao fim da manhã.</div>` : ''}
+    <div class="daynav"><button class="dn-b" data-day="-1" aria-label="Dia anterior">‹</button>
+      <label class="dn-c"><b>${dayTitle}</b><span>${daySub}</span><input type="date" id="dayPick" value="${k}" max="${dkey(real)}"></label>
+      <button class="dn-b" data-day="1" aria-label="Dia seguinte" ${isToday ? 'disabled' : ''}>›</button></div>
+    ${!isToday ? `<div class="pastday">✏️ A registar dados de <b>${dayTitle.toLowerCase() === 'ontem' ? 'ontem' : fmtShort(k)}</b>. <button class="link" data-day="0">Voltar a hoje</button></div>` : ''}
+    ${isToday ? banners() : ''}${pr.vac ? `<div class="vac">🏖️ Modo férias${s.feriasModo === 'auto' && s.feriasFim ? ` até ${fmtShort(s.feriasFim)}` : ''} — durma bem, o treino é ao fim da manhã.</div>` : ''}
     <section class="card"><h2>💧 Água <span class="right">${num(w / 1000, 2)} / ${num(s.metaAgua / 1000, 1)} L</span></h2>
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
       <div class="row"><button class="btn sm ghost" data-water="-${s.copoMl}">−${s.copoMl}</button><button class="btn sm" data-water="${s.copoMl}">+ copo ${s.copoMl} ml</button><button class="btn sm" data-water="500">+ garrafa 500 ml</button></div>
-      <p class="muted small">${w >= s.metaAgua ? '✅ Meta de hoje cumprida!' : `Faltam ${num((s.metaAgua - w) / 1000, 2)} L (≈ ${Math.ceil((s.metaAgua - w) / s.copoMl)} copos).`} Chá e infusões sem açúcar também contam.</p></section>
+      <p class="muted small">${w >= s.metaAgua ? '✅ Meta do dia cumprida!' : `Faltam ${num((s.metaAgua - w) / 1000, 2)} L (≈ ${Math.ceil((s.metaAgua - w) / s.copoMl)} copos).`} Chá e infusões sem açúcar também contam.</p></section>
     ${s.notifSnack ? (() => { const [sm, st] = snacksFor(now), tm = new Date(now); tm.setDate(now.getDate() + 1); const [t1, t2] = snacksFor(tm);
-      return `<section class="card"><h2>🍎 Snacks de hoje</h2>
+      return `<section class="card"><h2>🍎 Snacks${isToday ? ' de hoje' : ''}</h2>
       ${s.snackManha ? `<div class="hist"><span>${s.snackManha} · manhã</span><span>${sm.name}</span></div>` : ''}
       <div class="hist"><span>${s.snackTarde} · tarde</span><span>${st.name}</span></div>
       ${s.snackPrep ? `<p class="muted small">Amanhã: ${t1.name} · ${t2.name}</p>` : ''}</section>`; })() : ''}
-    <section class="card"><h2>Treino de hoje</h2>${sessionCard(k, 'am', cfg.am)}${sessionCard(k, 'pm', cfg.pm)}</section>
-    <section class="card"><h2>⚖️ Peso de hoje</h2>
+    <section class="card"><h2>Treino${isToday ? ' de hoje' : ''}</h2>${sessionCard(k, 'am', cfg.am)}${sessionCard(k, 'pm', cfg.pm)}</section>
+    <section class="card"><h2>⚖️ Peso${isToday ? ' de hoje' : ''}</h2>
       <div class="row"><input id="inPeso" type="number" inputmode="decimal" step="0.1" placeholder="kg" value="${wt ?? ''}"><button class="btn sm" data-act="savePeso">Guardar</button></div>
       <p class="muted small">${a7 ? `Média 7 dias: <b>${num(a7)} kg</b>${a7prev ? ` (${a7 - a7prev <= 0 ? '' : '+'}${num(a7 - a7prev)} vs. semana anterior)` : ''}` : last ? `Último: ${num(last)} kg` : 'O peso oscila de dia para dia — o que conta é a média semanal.'}</p>
       ${showWaist ? `<h3>📏 Cintura (semanal)</h3><div class="row"><input id="inCintura" type="number" inputmode="decimal" step="0.5" placeholder="cm" value="${state.waist[k] ?? ''}"><button class="btn sm" data-act="saveCintura">Guardar</button></div>
@@ -269,11 +278,11 @@ function vHoje() {
     <section class="card"><h2>🍷 Álcool <span class="right ${bw > s.metaCerveja ? 'bad' : ''}">${bw} / ${s.metaCerveja} bebidas esta semana</span></h2>
       ${alcRow('c', '🍺', 'Cerveja (330 ml)')}${alcRow('v', '🍷', 'Vinho (copo 150 ml)')}${alcRow('o', '🥃', 'Destilado (dose 40 ml)')}
       <p class="muted small">💡 ${tip}</p></section>
-    ${state.settings.tabaco ? (() => { const n = smokeToday(), g = smokeGoal(state), sl = sinceLast(); return `<section class="card"><h2>🚭 Tabaco <span class="right ${n > g ? 'bad' : ''}">${n} / ${g} hoje</span></h2>
+    ${state.settings.tabaco ? (() => { const n = smokeToday(k), g = smokeGoal(state, now), sl = isToday ? sinceLast() : null; return `<section class="card"><h2>🚭 Tabaco <span class="right ${n > g ? 'bad' : ''}">${n} / ${g}${isToday ? ' hoje' : ''}</span></h2>
       <div class="bar-wrap"><div class="bar-fill ${n > g ? 'over' : ''}" style="width:${g ? Math.min(100, Math.round((n / g) * 100)) : 100}%"></div></div>
       <div class="row"><button class="btn sm ghost" data-act="smokeMinus">−1</button><button class="btn sm" data-act="smokePlus">+1 cigarro</button><button class="btn sm ghost" data-act="breathe">🌬️ Respirar 2 min</button></div>
       <p class="muted small">${sl ? `Último há <b>${sl}</b>. ` : ''}💡 ${SMOKE_TIPS[new Date().getDate() % SMOKE_TIPS.length]}</p></section>`; })() : ''}
-    <section class="card tea"><h2>🍵 Sugestão para agora</h2><b>${tea.name}</b><p class="small">${tea.good}</p><p class="muted small">${tea.how}</p></section>`;
+    ${isToday ? `<section class="card tea"><h2>🍵 Sugestão para agora</h2><b>${tea.name}</b><p class="small">${tea.good}</p><p class="muted small">${tea.how}</p></section>` : ''}`;
 }
 
 function vTreino() {
@@ -286,7 +295,7 @@ function vTreino() {
   for (let i = 0; i < 28; i++) {
     const d = addDays(start, i), k = dkey(d), l = state.log[k] || {};
     const c = (l.am && l.am.done ? 1 : 0) + (l.pm && l.pm.done ? 1 : 0);
-    cells += `<div class="cell c${c} ${k === dkey() ? 'today' : ''} ${d > today ? 'fut' : ''}" title="${fmtShort(k)}">${d.getDate()}</div>`;
+    cells += `<div class="cell c${c} ${k === dkey() ? 'today' : ''} ${d > today ? 'fut' : ''}" title="${fmtShort(k)}" ${d > today ? '' : `data-gotoday="${k}"`}>${d.getDate()}</div>`;
   }
   let weekDone = 0, weekPlanned = 0;
   for (let i = 0; i < 7; i++) {
@@ -691,10 +700,12 @@ function pairsRun(k, slot, ses) {
 
 // ---------- Eventos ----------
 app.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided],[data-swap],[data-shopday],[data-menuday],[data-rectab],[data-goto]');
+  const t = e.target.closest('[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided],[data-swap],[data-shopday],[data-menuday],[data-rectab],[data-goto],[data-day],[data-gotoday]');
   if (!t) return;
   const d = t.dataset;
-  if (d.tab) { tab = d.tab; render(); window.scrollTo(0, 0); return; }
+  if (d.tab) { if (d.tab === 'hoje' && t.closest('nav')) viewDay = null; tab = d.tab; render(); window.scrollTo(0, 0); return; }
+  if (d.day !== undefined) { shiftDay(Number(d.day)); return; }
+  if (d.gotoday) { viewDay = d.gotoday === dkey() ? null : d.gotoday; tab = 'hoje'; render(); window.scrollTo(0, 0); return; }
   if (d.toggle) { open[d.toggle] = !open[d.toggle]; render(); return; }
   if (d.done) {
     const [k, sl] = d.done.split('|'); const l = slotLog(k, sl);
@@ -702,8 +713,8 @@ app.addEventListener('click', async (e) => {
     if (l.done) { l.checks = SESSIONS[l.s].items.map((_, i) => i); open[`${k}-${sl}`] = false; }
     save(); render(); return;
   }
-  if (d.water) { addWater(Number(d.water)); render(); return; }
-  if (d.alc) { const [ty, n] = d.alc.split('|'), k = dkey(); state.alc[k] = state.alc[k] || {}; state.alc[k][ty] = Math.max(0, (state.alc[k][ty] || 0) + Number(n)); save(); render(); return; }
+  if (d.water) { addWater(Number(d.water), tab === 'hoje' ? curKey() : dkey()); render(); return; }
+  if (d.alc) { const [ty, n] = d.alc.split('|'), k = curKey(); state.alc[k] = state.alc[k] || {}; state.alc[k][ty] = Math.max(0, (state.alc[k][ty] || 0) + Number(n)); save(); render(); return; }
   if (d.nutri) { nutriTab = d.nutri; render(); return; }
   if (d.plan) { planEdit = d.plan; render(); return; }
   if (d.goto) { if (d.goto === 'menu' || d.goto === 'chas') { tab = 'nutri'; nutriTab = d.goto; menuDay = null; } else tab = d.goto; render(); window.scrollTo(0, 0); return; }
@@ -722,19 +733,19 @@ app.addEventListener('click', async (e) => {
   switch (d.act) {
     case 'savePeso': {
       const v = parseFloat(String(document.getElementById('inPeso').value).replace(',', '.'));
-      if (v > 30 && v < 300) { state.weight[dkey()] = Math.round(v * 10) / 10; save(); render(); }
+      if (v > 30 && v < 300) { state.weight[curKey()] = Math.round(v * 10) / 10; save(); render(); }
       break;
     }
     case 'saveCintura': {
       const v = parseFloat(String(document.getElementById('inCintura').value).replace(',', '.'));
-      if (v > 40 && v < 250) { state.waist[dkey()] = v; save(); render(); }
+      if (v > 40 && v < 250) { state.waist[curKey()] = v; save(); render(); }
       break;
     }
     case 'clearShop': state.shop = { sel: [], checked: {} }; save(); render(); break;
     case 'resetPlan': if (confirm('Repor o plano original?')) { if (planEdit === 'ferias') state.weekFerias = clone(DEFAULT_WEEK_FERIAS); else state.week = clone(DEFAULT_WEEK); save(true); render(); } break;
     case 'test': await testNotification(); break;
-    case 'smokePlus': { const k = dkey(); (state.smokeLog[k] = state.smokeLog[k] || []).push(Date.now()); if (!state.settings.tabacoInicio) state.settings.tabacoInicio = k; save(true); render(); break; }
-    case 'smokeMinus': { const k = dkey(); if ((state.smokeLog[k] || []).length) state.smokeLog[k].pop(); save(); render(); break; }
+    case 'smokePlus': { const k = curKey(); (state.smokeLog[k] = state.smokeLog[k] || []).push(k === dkey() ? Date.now() : 0); if (!state.settings.tabacoInicio) state.settings.tabacoInicio = k; save(true); render(); break; }
+    case 'smokeMinus': { const k = curKey(); if ((state.smokeLog[k] || []).length) state.smokeLog[k].pop(); save(); render(); break; }
     case 'breathe': breathe(); break;
     case 'okUpd': updatedInfo = null; render(); break;
     case 'apk': openApk(); break;
@@ -755,8 +766,24 @@ app.addEventListener('click', async (e) => {
   }
 });
 
+function shiftDay(n) {
+  const today = dkey();
+  if (n === 0) viewDay = null;
+  else { const nk = dkey(addDays(fromKey(curKey()), n)); viewDay = nk >= today ? null : nk; }
+  render(); window.scrollTo(0, 0);
+}
+// Deslizar o dedo no ecrã Hoje para mudar de dia
+let tx = null, ty = null;
+app.addEventListener('touchstart', (e) => { if (tab !== 'hoje' || e.target.closest('input,select,textarea,#coach')) { tx = null; return; } tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+app.addEventListener('touchend', (e) => {
+  if (tx == null) return;
+  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty; tx = null;
+  if (Math.abs(dx) > 80 && Math.abs(dy) < 60) shiftDay(dx > 0 ? -1 : 1);
+}, { passive: true });
+
 app.addEventListener('change', (e) => {
   const t = e.target, d = t.dataset;
+  if (t.id === 'dayPick' && t.value) { viewDay = t.value >= dkey() ? null : t.value; render(); return; }
   if (d.check) {
     const [k, sl, i] = d.check.split('|'); const l = slotLog(k, sl); const n = Number(i);
     if (t.checked) { if (!l.checks.includes(n)) l.checks.push(n); } else l.checks = l.checks.filter((x) => x !== n);

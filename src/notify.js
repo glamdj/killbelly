@@ -74,7 +74,7 @@ export function smokeHours(state, now = new Date()) {
   let total = 0;
   for (let i = 0; i < 14; i++) {
     const d = new Date(now); d.setDate(now.getDate() - i);
-    for (const t of log[dkey(d)] || []) { const h = new Date(t).getHours(); cnt[h] = (cnt[h] || 0) + 1; total++; }
+    for (const t of (log[dkey(d)] || []).filter((x) => x > 0)) { const h = new Date(t).getHours(); cnt[h] = (cnt[h] || 0) + 1; total++; }
   }
   if (total < 15) return { learned: false, hours: (state.settings.tabacoHoras || '07:30,13:30,20:30').split(',').map((x) => x.trim()).filter(Boolean) };
   const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([h]) => Number(h)).sort((a, b) => a - b);

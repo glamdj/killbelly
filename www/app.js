@@ -2643,7 +2643,7 @@
     for (let i = 0; i < 14; i++) {
       const d = new Date(now);
       d.setDate(now.getDate() - i);
-      for (const t of log[dkey(d)] || []) {
+      for (const t of (log[dkey(d)] || []).filter((x) => x > 0)) {
         const h = new Date(t).getHours();
         cnt[h] = (cnt[h] || 0) + 1;
         total++;
@@ -2961,9 +2961,7 @@
   };
   var MONTHS = ["janeiro", "fevereiro", "mar\xE7o", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
   var num = (v, dec = 1) => Number(v).toFixed(dec).replace(".", ",");
-  var waterToday = () => state.water[dkey2()] || 0;
-  function addWater(ml) {
-    const k = dkey2();
+  function addWater(ml, k = dkey2()) {
     state.water[k] = Math.max(0, (state.water[k] || 0) + ml);
     save();
   }
@@ -3048,6 +3046,8 @@
   var planWeek = () => (planEdit || (isVacation(state) ? "ferias" : "normal")) === "ferias" ? state.weekFerias : state.week;
   var recTab = "refeicoes";
   var menuDay = null;
+  var viewDay = null;
+  var curKey = () => viewDay && viewDay < dkey2() ? viewDay : dkey2();
   var tab = "hoje";
   var nutriTab = "menu";
   var open = {};
@@ -3143,41 +3143,50 @@
   }
   function vHoje() {
     var _a;
-    const now = /* @__PURE__ */ new Date(), k = dkey2(now), pr = profile(state, now), cfg = pr.week[now.getDay()];
+    const real = /* @__PURE__ */ new Date(), k = curKey(), isToday = k === dkey2(real);
+    const now = isToday ? real : new Date(fromKey(k).setHours(12));
+    const pr = profile(state, now), cfg = pr.week[now.getDay()];
     const s = pr.s;
-    const w = waterToday(), pct = Math.min(100, Math.round(w / s.metaAgua * 100));
-    const hr = now.getHours();
+    const w = state.water[k] || 0, pct = Math.min(100, Math.round(w / s.metaAgua * 100));
+    const hr = real.getHours();
+    const yday = dkey2(addDays(real, -1)) === k;
+    const dayTitle = isToday ? "Hoje" : yday ? "Ontem" : DAY_NAMES[now.getDay()];
+    const daySub = `${isToday || yday ? `${DAY_NAMES[now.getDay()]}, ` : ""}${now.getDate()} de ${MONTHS[now.getMonth()]}${now.getFullYear() !== real.getFullYear() ? ` de ${now.getFullYear()}` : ""}`;
     const greet = hr < 12 ? "Bom dia" : hr < 19 ? "Boa tarde" : "Boa noite";
     const wt = state.weight[k];
     const prevKeys = sortedKeys(state.weight).filter((x) => x < k);
     const last = prevKeys.length ? state.weight[prevKeys[prevKeys.length - 1]] : null;
     const a7 = avg7(k), a7prev = avg7(dkey2(addDays(now, -7)));
-    const monday = dkey2(mondayOf());
+    const monday = dkey2(mondayOf(now));
     const waistThisWeek = sortedKeys(state.waist).filter((x) => x >= monday);
     const showWaist = now.getDay() === Number(s.cinturaDia) || !waistThisWeek.length;
-    const bw = beerWeek(), at2 = state.alc[k] || {};
+    const bw = beerWeek(mondayOf(now)), at2 = state.alc[k] || {};
     const tip = ALC_TIPS[now.getDate() % ALC_TIPS.length];
     const alcRow = (t, ic, l) => `<div class="alc-r"><span>${ic} ${l}</span><button class="btn sm ghost" data-alc="${t}|-1">\u2212</button><b>${at2[t] || 0}</b><button class="btn sm" data-alc="${t}|1">+</button></div>`;
     const tea = hr < 12 ? TEAS[0] : hr < 16 ? TEAS[6] : hr < 19 ? TEAS[10] : TEAS[hr < 21 ? 5 : 4];
     const st = streak();
-    return `<header><div><h1>${greet}, ${s.nome}</h1><div class="muted">${DAY_NAMES[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]}</div></div>
+    return `<header><div><h1>${greet}, ${s.nome}</h1></div>
     <div class="hdr-r"><button class="bell" data-tab="notifs" aria-label="Notifica\xE7\xF5es">\u{1F514}${unreadCount() ? `<span class="badge">${unreadCount()}</span>` : ""}</button><div class="streak" title="Dias seguidos com treino">\u{1F525} ${st}</div></div></header>
-    ${banners()}${pr.vac ? `<div class="vac">\u{1F3D6}\uFE0F Modo f\xE9rias${s.feriasModo === "auto" && s.feriasFim ? ` at\xE9 ${fmtShort(s.feriasFim)}` : ""} \u2014 durma bem, o treino \xE9 ao fim da manh\xE3.</div>` : ""}
+    <div class="daynav"><button class="dn-b" data-day="-1" aria-label="Dia anterior">\u2039</button>
+      <label class="dn-c"><b>${dayTitle}</b><span>${daySub}</span><input type="date" id="dayPick" value="${k}" max="${dkey2(real)}"></label>
+      <button class="dn-b" data-day="1" aria-label="Dia seguinte" ${isToday ? "disabled" : ""}>\u203A</button></div>
+    ${!isToday ? `<div class="pastday">\u270F\uFE0F A registar dados de <b>${dayTitle.toLowerCase() === "ontem" ? "ontem" : fmtShort(k)}</b>. <button class="link" data-day="0">Voltar a hoje</button></div>` : ""}
+    ${isToday ? banners() : ""}${pr.vac ? `<div class="vac">\u{1F3D6}\uFE0F Modo f\xE9rias${s.feriasModo === "auto" && s.feriasFim ? ` at\xE9 ${fmtShort(s.feriasFim)}` : ""} \u2014 durma bem, o treino \xE9 ao fim da manh\xE3.</div>` : ""}
     <section class="card"><h2>\u{1F4A7} \xC1gua <span class="right">${num(w / 1e3, 2)} / ${num(s.metaAgua / 1e3, 1)} L</span></h2>
       <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
       <div class="row"><button class="btn sm ghost" data-water="-${s.copoMl}">\u2212${s.copoMl}</button><button class="btn sm" data-water="${s.copoMl}">+ copo ${s.copoMl} ml</button><button class="btn sm" data-water="500">+ garrafa 500 ml</button></div>
-      <p class="muted small">${w >= s.metaAgua ? "\u2705 Meta de hoje cumprida!" : `Faltam ${num((s.metaAgua - w) / 1e3, 2)} L (\u2248 ${Math.ceil((s.metaAgua - w) / s.copoMl)} copos).`} Ch\xE1 e infus\xF5es sem a\xE7\xFAcar tamb\xE9m contam.</p></section>
+      <p class="muted small">${w >= s.metaAgua ? "\u2705 Meta do dia cumprida!" : `Faltam ${num((s.metaAgua - w) / 1e3, 2)} L (\u2248 ${Math.ceil((s.metaAgua - w) / s.copoMl)} copos).`} Ch\xE1 e infus\xF5es sem a\xE7\xFAcar tamb\xE9m contam.</p></section>
     ${s.notifSnack ? (() => {
       const [sm, st2] = snacksFor(now), tm = new Date(now);
       tm.setDate(now.getDate() + 1);
       const [t1, t2] = snacksFor(tm);
-      return `<section class="card"><h2>\u{1F34E} Snacks de hoje</h2>
+      return `<section class="card"><h2>\u{1F34E} Snacks${isToday ? " de hoje" : ""}</h2>
       ${s.snackManha ? `<div class="hist"><span>${s.snackManha} \xB7 manh\xE3</span><span>${sm.name}</span></div>` : ""}
       <div class="hist"><span>${s.snackTarde} \xB7 tarde</span><span>${st2.name}</span></div>
       ${s.snackPrep ? `<p class="muted small">Amanh\xE3: ${t1.name} \xB7 ${t2.name}</p>` : ""}</section>`;
     })() : ""}
-    <section class="card"><h2>Treino de hoje</h2>${sessionCard(k, "am", cfg.am)}${sessionCard(k, "pm", cfg.pm)}</section>
-    <section class="card"><h2>\u2696\uFE0F Peso de hoje</h2>
+    <section class="card"><h2>Treino${isToday ? " de hoje" : ""}</h2>${sessionCard(k, "am", cfg.am)}${sessionCard(k, "pm", cfg.pm)}</section>
+    <section class="card"><h2>\u2696\uFE0F Peso${isToday ? " de hoje" : ""}</h2>
       <div class="row"><input id="inPeso" type="number" inputmode="decimal" step="0.1" placeholder="kg" value="${wt != null ? wt : ""}"><button class="btn sm" data-act="savePeso">Guardar</button></div>
       <p class="muted small">${a7 ? `M\xE9dia 7 dias: <b>${num(a7)} kg</b>${a7prev ? ` (${a7 - a7prev <= 0 ? "" : "+"}${num(a7 - a7prev)} vs. semana anterior)` : ""}` : last ? `\xDAltimo: ${num(last)} kg` : "O peso oscila de dia para dia \u2014 o que conta \xE9 a m\xE9dia semanal."}</p>
       ${showWaist ? `<h3>\u{1F4CF} Cintura (semanal)</h3><div class="row"><input id="inCintura" type="number" inputmode="decimal" step="0.5" placeholder="cm" value="${(_a = state.waist[k]) != null ? _a : ""}"><button class="btn sm" data-act="saveCintura">Guardar</button></div>
@@ -3187,13 +3196,13 @@
       ${alcRow("c", "\u{1F37A}", "Cerveja (330 ml)")}${alcRow("v", "\u{1F377}", "Vinho (copo 150 ml)")}${alcRow("o", "\u{1F943}", "Destilado (dose 40 ml)")}
       <p class="muted small">\u{1F4A1} ${tip}</p></section>
     ${state.settings.tabaco ? (() => {
-      const n = smokeToday(), g = smokeGoal(state), sl = sinceLast();
-      return `<section class="card"><h2>\u{1F6AD} Tabaco <span class="right ${n > g ? "bad" : ""}">${n} / ${g} hoje</span></h2>
+      const n = smokeToday(k), g = smokeGoal(state, now), sl = isToday ? sinceLast() : null;
+      return `<section class="card"><h2>\u{1F6AD} Tabaco <span class="right ${n > g ? "bad" : ""}">${n} / ${g}${isToday ? " hoje" : ""}</span></h2>
       <div class="bar-wrap"><div class="bar-fill ${n > g ? "over" : ""}" style="width:${g ? Math.min(100, Math.round(n / g * 100)) : 100}%"></div></div>
       <div class="row"><button class="btn sm ghost" data-act="smokeMinus">\u22121</button><button class="btn sm" data-act="smokePlus">+1 cigarro</button><button class="btn sm ghost" data-act="breathe">\u{1F32C}\uFE0F Respirar 2 min</button></div>
       <p class="muted small">${sl ? `\xDAltimo h\xE1 <b>${sl}</b>. ` : ""}\u{1F4A1} ${SMOKE_TIPS[(/* @__PURE__ */ new Date()).getDate() % SMOKE_TIPS.length]}</p></section>`;
     })() : ""}
-    <section class="card tea"><h2>\u{1F375} Sugest\xE3o para agora</h2><b>${tea.name}</b><p class="small">${tea.good}</p><p class="muted small">${tea.how}</p></section>`;
+    ${isToday ? `<section class="card tea"><h2>\u{1F375} Sugest\xE3o para agora</h2><b>${tea.name}</b><p class="small">${tea.good}</p><p class="muted small">${tea.how}</p></section>` : ""}`;
   }
   function vTreino() {
     const today = /* @__PURE__ */ new Date();
@@ -3204,7 +3213,7 @@
     for (let i = 0; i < 28; i++) {
       const d = addDays(start, i), k = dkey2(d), l = state.log[k] || {};
       const c = (l.am && l.am.done ? 1 : 0) + (l.pm && l.pm.done ? 1 : 0);
-      cells += `<div class="cell c${c} ${k === dkey2() ? "today" : ""} ${d > today ? "fut" : ""}" title="${fmtShort(k)}">${d.getDate()}</div>`;
+      cells += `<div class="cell c${c} ${k === dkey2() ? "today" : ""} ${d > today ? "fut" : ""}" title="${fmtShort(k)}" ${d > today ? "" : `data-gotoday="${k}"`}>${d.getDate()}</div>`;
     }
     let weekDone = 0, weekPlanned = 0;
     for (let i = 0; i < 7; i++) {
@@ -3660,11 +3669,23 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
     });
   }
   app.addEventListener("click", async (e) => {
-    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided],[data-swap],[data-shopday],[data-menuday],[data-rectab],[data-goto]");
+    const t = e.target.closest("[data-tab],[data-toggle],[data-done],[data-water],[data-alc],[data-act],[data-nutri],[data-shop],[data-del],[data-plan],[data-setb],[data-guided],[data-swap],[data-shopday],[data-menuday],[data-rectab],[data-goto],[data-day],[data-gotoday]");
     if (!t) return;
     const d = t.dataset;
     if (d.tab) {
+      if (d.tab === "hoje" && t.closest("nav")) viewDay = null;
       tab = d.tab;
+      render();
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (d.day !== void 0) {
+      shiftDay(Number(d.day));
+      return;
+    }
+    if (d.gotoday) {
+      viewDay = d.gotoday === dkey2() ? null : d.gotoday;
+      tab = "hoje";
       render();
       window.scrollTo(0, 0);
       return;
@@ -3688,14 +3709,14 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
       return;
     }
     if (d.water) {
-      addWater(Number(d.water));
+      addWater(Number(d.water), tab === "hoje" ? curKey() : dkey2());
       render();
       return;
     }
     if (d.alc) {
-      const [ty, n] = d.alc.split("|"), k = dkey2();
+      const [ty2, n] = d.alc.split("|"), k = curKey();
       state.alc[k] = state.alc[k] || {};
-      state.alc[k][ty] = Math.max(0, (state.alc[k][ty] || 0) + Number(n));
+      state.alc[k][ty2] = Math.max(0, (state.alc[k][ty2] || 0) + Number(n));
       save();
       render();
       return;
@@ -3770,7 +3791,7 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
       case "savePeso": {
         const v = parseFloat(String(document.getElementById("inPeso").value).replace(",", "."));
         if (v > 30 && v < 300) {
-          state.weight[dkey2()] = Math.round(v * 10) / 10;
+          state.weight[curKey()] = Math.round(v * 10) / 10;
           save();
           render();
         }
@@ -3779,7 +3800,7 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
       case "saveCintura": {
         const v = parseFloat(String(document.getElementById("inCintura").value).replace(",", "."));
         if (v > 40 && v < 250) {
-          state.waist[dkey2()] = v;
+          state.waist[curKey()] = v;
           save();
           render();
         }
@@ -3802,15 +3823,15 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
         await testNotification();
         break;
       case "smokePlus": {
-        const k = dkey2();
-        (state.smokeLog[k] = state.smokeLog[k] || []).push(Date.now());
+        const k = curKey();
+        (state.smokeLog[k] = state.smokeLog[k] || []).push(k === dkey2() ? Date.now() : 0);
         if (!state.settings.tabacoInicio) state.settings.tabacoInicio = k;
         save(true);
         render();
         break;
       }
       case "smokeMinus": {
-        const k = dkey2();
+        const k = curKey();
         if ((state.smokeLog[k] || []).length) state.smokeLog[k].pop();
         save();
         render();
@@ -3876,8 +3897,39 @@ ${tm("vSnackTarde", "Lanche da tarde")}    ${tm("vCerveja", "Lembrete antes de b
       }
     }
   });
+  function shiftDay(n) {
+    const today = dkey2();
+    if (n === 0) viewDay = null;
+    else {
+      const nk = dkey2(addDays(fromKey(curKey()), n));
+      viewDay = nk >= today ? null : nk;
+    }
+    render();
+    window.scrollTo(0, 0);
+  }
+  var tx = null;
+  var ty = null;
+  app.addEventListener("touchstart", (e) => {
+    if (tab !== "hoje" || e.target.closest("input,select,textarea,#coach")) {
+      tx = null;
+      return;
+    }
+    tx = e.touches[0].clientX;
+    ty = e.touches[0].clientY;
+  }, { passive: true });
+  app.addEventListener("touchend", (e) => {
+    if (tx == null) return;
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    tx = null;
+    if (Math.abs(dx) > 80 && Math.abs(dy) < 60) shiftDay(dx > 0 ? -1 : 1);
+  }, { passive: true });
   app.addEventListener("change", (e) => {
     const t = e.target, d = t.dataset;
+    if (t.id === "dayPick" && t.value) {
+      viewDay = t.value >= dkey2() ? null : t.value;
+      render();
+      return;
+    }
     if (d.check) {
       const [k, sl, i] = d.check.split("|");
       const l = slotLog(k, sl);
